@@ -96,6 +96,14 @@ export async function initDb(dbFile = DEFAULT_DB) {
 export async function migrateDb(dbFile = DEFAULT_DB) {
   const db = await open({ filename: dbFile, driver: sqlite3.Database });
 
+  // Ensure WAL mode is enabled (critical for consistent state)
+  await db.exec(`
+    PRAGMA journal_mode = WAL;
+    PRAGMA synchronous = NORMAL;
+    PRAGMA foreign_keys = ON;
+    PRAGMA busy_timeout = 5000;
+  `);
+
   // add COLUMN active to charlog
   const migrate_check1 = await db.get(`SELECT * FROM pragma_table_info('charlog') WHERE name = 'active';`);
   if (!migrate_check1) {await db.exec(`
