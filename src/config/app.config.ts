@@ -56,7 +56,7 @@ export type LfgFeatureConfig = {
 
 export type Features = {
     wipes?: { enabled: boolean }; // placeholder for future wipe tracking feature
-    dtp?: { rate: number }; // amount of DTP gained per day
+    dtp?: { rate: number; max?: number }; // rate: DTP gained per day, max: maximum DTP that can accrue
     lfg?: LfgFeatureConfig; 
     // this is where we put other features like charlog and economy.
 }
@@ -106,7 +106,7 @@ export const DEFAULT_CONFIG: AppConfig = {
             },
             features: {
                 wipes: { enabled: false },
-                dtp: { rate: 2 },
+                dtp: { rate: 2, max: 365 },
                 lfg: {
                     enabled: true,
                     channels: {
