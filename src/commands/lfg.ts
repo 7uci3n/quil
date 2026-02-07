@@ -385,7 +385,12 @@ async function handleRemove(ix: ChatInputCommandInteraction) {
   if (tierChoice === "all") {
     entry = clearAll(entry, Date.now());
     await upsertLfgEntry(entry);
-    await syncRolesFor(member, entry);
+    // Remove tier roles but keep base LFG role
+    await removeRoleById(member, LFG_TIER_ROLE_IDS.low);
+    await removeRoleById(member, LFG_TIER_ROLE_IDS.mid);
+    await removeRoleById(member, LFG_TIER_ROLE_IDS.high);
+    await removeRoleById(member, LFG_TIER_ROLE_IDS.epic);
+    await removeRoleById(member, LFG_TIER_ROLE_IDS.pbp);
     // if truly nothing left, remove entry entirely
     if (!anyTierOn(entry)) await deleteLfgEntry(ix.user.id);
     await refreshBoard(ix);

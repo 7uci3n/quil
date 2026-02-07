@@ -31,7 +31,7 @@ const ROLE = CFG.roles;
 
 const PERMS = {
   custom: [ROLE.dm.id, ROLE.moderator.id, ROLE.admin.id, ROLE.keeper.id],
-  dm: [ROLE.dm.id, ROLE.moderator.id, ROLE.admin.id, ROLE.keeper.id],
+  dm: [ROLE.member.id, ROLE.dm.id, ROLE.moderator.id, ROLE.admin.id, ROLE.keeper.id],
   staff: [ROLE.moderator.id, ROLE.admin.id, ROLE.keeper.id],
 };
 
@@ -236,7 +236,7 @@ async function handleCustom(ix: ChatInputCommandInteraction) {
   await ix.reply({
     content: t("reward.custom.contentApplied", { mentions: mentionList }),
     embeds: [embed],
-    allowedMentions: { users: recipients.map(([u,c]) => u.id) }
+    allowedMentions: { users: Array.from(new Set(recipients.map(([u,c]) => u.id))) }
   });
 }
 

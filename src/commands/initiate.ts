@@ -51,6 +51,20 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   );
 
   await setActive(interaction.user.id, rawName)
+  
+  // Auto-grant Guild Member role if not already present
+  const GUILD_MEMBER_ROLE_ID = CONFIG.guild?.config.guildMemberRole;
+  if (interaction.guild && GUILD_MEMBER_ROLE_ID) {
+    try {
+      const member = await interaction.guild.members.fetch(targetUser.id);
+      if (!member.roles.cache.has(GUILD_MEMBER_ROLE_ID)) {
+        await member.roles.add(GUILD_MEMBER_ROLE_ID);
+      }
+    } catch (err) {
+      console.error(`Failed to grant Guild Member role to ${targetUser.id}:`, err);
+    }
+  }
+  
   showCharacterEmbed(interaction, {
     title: t('initiate.title', { name: rawName }), 
     desc: t('initiate.description', { name: rawName }), 

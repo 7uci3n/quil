@@ -64,6 +64,7 @@ export type Features = {
 export type GuildConfig = {
     name: string;
     roles: CoreRoles; // map capabilities
+    guildMemberRole?: string; // Optional role granted on character initiation
     channels: GuildChannels; // generic channels
     features: Features; // domain-specific knobs
 }
@@ -95,6 +96,7 @@ export const DEFAULT_CONFIG: AppConfig = {
                 moderator: {id: "371997814407954434"},
                 dm: {id: "1333297187353788437"},
             },
+            guildMemberRole: "1360283673903235233",
             channels: {
                 staff: "1401605229996408933",
                 resourceTracking: "1347077993830289418",

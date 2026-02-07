@@ -116,14 +116,8 @@ export async function execute(ix: ChatInputCommandInteraction) {
   const isInConfiguredGuild = ix.guildId === CONFIG.guild?.id;
   if (resource === "dtp") {isInAllowedChannel = isInAllowedChannel || ix.channelId === DTP_CHANNEL_ID}
 
-  if (!isInAllowedChannel && isInConfiguredGuild && sub === "show") {
-    await ix.reply({
-      flags: MessageFlags.Ephemeral,
-      content: t('sell.notInResourceChannel'),
-    });
-    return;
-  }
-
+  // Channel restriction removed for crew flexibility - no longer enforced for show subcommand
+  
   if (resource === "dtp"){
     if (await updateDTP(user.id, char) == null) {
       return ix.reply({
