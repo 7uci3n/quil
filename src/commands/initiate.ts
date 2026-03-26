@@ -62,6 +62,10 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       }
     } catch (err) {
       console.error(`Failed to grant Guild Member role to ${targetUser.id}:`, err);
+      await interaction.followUp({
+        ephemeral: true,
+        content: `⚠️ Character created, but I couldn't grant the Guild Member role (<@&${GUILD_MEMBER_ROLE_ID}>). Check my role position and permissions.\n\`\`\`${err instanceof Error ? err.message : String(err)}\`\`\``,
+      });
     }
   }
   

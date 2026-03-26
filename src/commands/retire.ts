@@ -174,7 +174,7 @@ export async function handleModal(interaction: ModalSubmitInteraction) {
             { name: '⬆️ Level', value: row.level?.toString() ?? 'N/A', inline: true },
             { name: '💪 XP', value: row.xp?.toString() ?? 'N/A', inline: true },
             { name: '💰 GP', value: row.cp !== undefined ? (row.cp / 100).toFixed(2) : 'N/A', inline: true },
-            { name: '🎫 GP', value: row.tp?.toString() ?? 'N/A', inline: true },
+            { name: '🎫 GT', value: row.tp?.toString() ?? 'N/A', inline: true },
         ],
         footer: { text: t('retire.footer') },
         color: 0xFF0000,

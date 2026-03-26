@@ -1,0 +1,44 @@
+{
+  "charedit": {
+    "rename": {
+      "success": [
+        "🖋 Done. **{oldName}** has had their name quietly corrected to **{newName}** in the ledger.",
+        "🖋 Scratched out **{oldName}**, wrote in **{newName}**. The ink is barely dry.",
+        "🖋 **{oldName}** is now **{newName}**. I've updated the record — try not to change it again.",
+        "🖋 One careful strikethrough and a fresh inscription. **{newName}** it is.",
+        "🖋 The ledger has been amended. **{oldName}** is **{newName}** henceforth. Filed.",
+        "🖋 Name corrected. Honestly, you'd think adventurers could make up their minds. **{newName}** is official.",
+        "🖋 Consider **{oldName}** erased. **{newName}** now occupies that line — try to stick with it."
+      ],
+      "noChar": [
+        "🖋 Can't rename what's not recorded. No character found.",
+        "🖋 No entry found to rename. Are you sure they're in the ledger?",
+        "🖋 The quill searches but finds no such character. Nothing to rename.",
+        "🖋 I flipped every page — no character to rename. Perhaps a ghost?"
+      ],
+      "conflict": [
+        "🖋 **{newName}** is already in the ledger. Pick a name that isn't taken.",
+        "🖋 There's already a **{newName}** on record. The ledger doesn't do duplicates.",
+        "🖋 **{newName}**? That name belongs to someone else already. Try another.",
+        "🖋 I won't write the same name twice. **{newName}** already has a page."
+      ],
+      "invalidName": [
+        "🖋 That name is illegible. Letters, numbers, spaces, apostrophes, and hyphens only.",
+        "🖋 I can't write that. Stick to letters, numbers, apostrophes, spaces, and hyphens.",
+        "🖋 The quill refuses. Invalid characters in that name — keep it legible.",
+        "🖋 Names in this ledger follow certain standards. That one does not meet them."
+      ],
+      "sameName": [
+        "🖋 That's already their name. Nothing to change here.",
+        "🖋 The new name is the same as the old one. I'll save the ink.",
+        "🖋 You've asked me to rename them to the same name. I haven't, on principle.",
+        "🖋 No changes made — that name is already recorded."
+      ],
+      "noPermission": [
+        "🖋 Only moderators or staff can rename another player's character.",
+        "🖋 Misfiled. You don't have authority to rename someone else's record.",
+        "🖋 The ledger restricts that action to staff. Nice try."
+      ]
+    }
+  }
+}

@@ -14,6 +14,7 @@ const CFG = CONFIG.guild!.config;
 const RESOURCE_CHANNEL_ID = CFG.channels?.resourceTracking || null;
 const DTP_CHANNEL_ID = CFG.channels?.dtpTracking || null;
 const MAGIC_ITEMS_CHANNEL_ID = CFG.channels?.magicItems || null;
+const CC_CHANNEL_ID = CFG.channels?.crewCoins || null;
 // helpers
 const toCp = (gp: number) => Math.round(gp * 100);
 const toGp = (cp: number) => (cp / 100).toFixed(2);
@@ -55,7 +56,7 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(ix: ChatInputCommandInteraction) {
   // Channel guard: only allowed in Resource or Magic Items channel (or test override)
-  const isInAllowedChannel = ix.channelId === RESOURCE_CHANNEL_ID || ix.channelId === MAGIC_ITEMS_CHANNEL_ID || ix.channelId === DTP_CHANNEL_ID;
+  const isInAllowedChannel = ix.channelId === RESOURCE_CHANNEL_ID || ix.channelId === MAGIC_ITEMS_CHANNEL_ID || ix.channelId === DTP_CHANNEL_ID || ix.channelId === CC_CHANNEL_ID;
   const isInConfiguredGuild = ix.guildId === CONFIG.guild?.id;
 
   if (!isInAllowedChannel && isInConfiguredGuild) {

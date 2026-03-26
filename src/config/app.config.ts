@@ -21,6 +21,7 @@ export type GuildChannels = {
     resourceTracking?: string;
     rewardsTracking?: string;
     dtpTracking?: string;
+    crewCoins?: string;
     magicItems?: string;
     // other generic channels can be added here
     }
@@ -102,6 +103,7 @@ export const DEFAULT_CONFIG: AppConfig = {
                 resourceTracking: "1347077993830289418",
                 rewardsTracking: "1441703165056516137",
                 dtpTracking: "1336083139272900740",
+                crewCoins: "1457778385710354484",
                 magicItems: "1347077949714731048",
             },
             features: {
