@@ -26,7 +26,7 @@
       "xp": "\uD83D\uDCAA XP",
       "prof": "\u2694\uFE0F Proficiency",
       "next": "\u27A1\uFE0F Next Threshold",
-      "progress": "\uD83C\uDFF4\u200D\u2620\uFE0F Progress",
+      "progress": "\uD83D\uDCC8 Progress",
       "max": "\u2B50 Max level reached."
     },
     "progressFmt": "`{pct}%`  ({curr} / {range})",
