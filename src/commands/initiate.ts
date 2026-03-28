@@ -50,7 +50,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     [targetUser.id, rawName, 3, 900, 8000, 0, true, 0, timestampNormal]
   );
 
-  await setActive(interaction.user.id, rawName)
+  await setActive(targetUser.id, rawName)
   
   // Auto-grant Guild Member role if not already present
   const GUILD_MEMBER_ROLE_ID = CONFIG.guild?.config.guildMemberRole;
