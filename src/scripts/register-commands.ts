@@ -2,7 +2,7 @@ import { log } from "../lib/log.js";
 import { REST, Routes, SlashCommandBuilder } from "discord.js";
 import path from "node:path";
 import fs from "node:fs/promises";
-import { pathToFileURL } from "node:url";
+import { pathToFileURL, fileURLToPath } from "node:url";
 
 import { CONFIG } from "../config/resolved.js";
 
@@ -40,19 +40,35 @@ if (IS_DEV && !CONFIG.system.devAppId) {
   throw new Error("DEV_APP_ID not set in env. Required for dev mode.");
 }
 
+// Resolve the commands dir relative to THIS module and pick the right extension,
+// so it works both from source (tsx → src/commands/*.ts) and from the compiled
+// image (node → dist/src/commands/*.js). Mirrors core/bot.ts (ADR-0003).
+function commandsDirAndExt(): { dir: string; ext: string } {
+  const here = fileURLToPath(new URL(".", import.meta.url));
+  const isBuilt = here.includes(`${path.sep}dist${path.sep}`);
+  return {
+    dir: path.resolve(here, "../commands"),
+    ext: isBuilt ? ".js" : ".ts",
+  };
+}
+
 // Flat, non-recursive — must match the runtime loader in core/bot.ts (ADR-0003).
-async function findCommandFiles(dir: string): Promise<string[]> {
+async function findCommandFiles(dir: string, ext: string): Promise<string[]> {
   const entries = await fs.readdir(dir, { withFileTypes: true });
   return entries
     .filter(
-      (e) => e.isFile() && /\.ts$/.test(e.name) && !/\.d\.ts$/.test(e.name),
+      (e) =>
+        e.isFile() &&
+        e.name.endsWith(ext) &&
+        !e.name.endsWith(".d.ts") &&
+        !e.name.endsWith(".map"),
     )
     .map((e) => path.join(dir, e.name));
 }
 
 async function loadCommandJSONs(): Promise<object[]> {
-  const commandsDir = path.resolve("src/commands");
-  const files = await findCommandFiles(commandsDir);
+  const { dir, ext } = commandsDirAndExt();
+  const files = await findCommandFiles(dir, ext);
   const jsons: object[] = [];
 
   for (const f of files) {
