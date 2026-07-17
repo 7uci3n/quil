@@ -14,8 +14,8 @@ export default defineConfig([
   },
   tseslint.configs.recommended,
   {
-    // Allow intentionally-unused names when prefixed with `_`.
     rules: {
+      // Allow intentionally-unused names when prefixed with `_`.
       "@typescript-eslint/no-unused-vars": [
         "error",
         {
@@ -24,6 +24,12 @@ export default defineConfig([
           caughtErrorsIgnorePattern: "^_",
         },
       ],
+      // ESLint 10 added this to `js/recommended` (ADR-0009). We keep the
+      // codebase's house style of defensive default initializers
+      // (`let dbStatus = "skipped"`, `let fields = []`) that are then
+      // reassigned in every branch — the defaults document intent and guard
+      // against future branches, so this rule is intentionally disabled.
+      "no-useless-assignment": "off",
     },
   },
   {
