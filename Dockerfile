@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ---- builder: install deps (with native toolchain) and compile TypeScript ----
-FROM node:20-bookworm AS builder
+FROM node:24-bookworm AS builder
 WORKDIR /app
 
 # Native build toolchain for sqlite3 bindings (node-gyp)
@@ -29,7 +29,7 @@ RUN cp -r config dist/config && cp package.json dist/package.json
 RUN npm prune --omit=dev
 
 # ---- runtime: slim image, no build toolchain, non-root ----
-FROM node:20-bookworm-slim AS runtime
+FROM node:24-bookworm-slim AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
 

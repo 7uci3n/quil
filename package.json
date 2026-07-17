@@ -4,6 +4,9 @@
   "description": "> A modern rewrite of the previous bot for Remnant D&D Discord Server.  \r > Rebuilt on the latest Discord.js with updated configs, typed personality strings, and long-term maintainability in mind.",
   "main": "src/core/bot.ts",
   "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
   "directories": {
     "doc": "docs"
   },
