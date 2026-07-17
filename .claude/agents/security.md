@@ -34,7 +34,7 @@ Run `npm audit` or `safety check`. Flag known vulnerabilities.
 
 ### 5. Environment Variables
 
-Verify no secrets in VITE*\*, NEXT_PUBLIC*_, REACT*APP*_ vars.
+Verify no secrets in VITE*\*, NEXT_PUBLIC*\_, REACT*APP*_ vars.
 
 ## Severity and Blocking
 

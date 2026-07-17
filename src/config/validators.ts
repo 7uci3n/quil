@@ -10,8 +10,7 @@ import { t } from "../lib/i18n.js";
 import type { APIInteractionGuildMember } from "discord.js";
 
 type ChannelIdInput =
-  | (string | null | undefined)
-  | (string | null | undefined)[];
+  (string | null | undefined) | (string | null | undefined)[];
 
 /** Normalize one-or-many, possibly-nullish ids into a clean string[]. */
 function toIds(input: ChannelIdInput): string[] {

@@ -112,12 +112,7 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(ix: ChatInputCommandInteraction) {
   const sub = ix.options.getSubcommand() as
-    | "toggle"
-    | "add"
-    | "remove"
-    | "status"
-    | "list"
-    | "purge";
+    "toggle" | "add" | "remove" | "status" | "list" | "purge";
   if (sub === "toggle") return handleToggle(ix);
   if (sub === "add") return handleAdd(ix);
   if (sub === "remove") return handleRemove(ix);
