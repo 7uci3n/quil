@@ -1,5 +1,6 @@
 {
   "retire": {
+    "retiredBy": [" (retired by {actor})"],
     "invalidName": [
       "🖋 That name has characters the ledger won't accept — letters, numbers, spaces, apostrophes and hyphens only."
     ],

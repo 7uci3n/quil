@@ -57,6 +57,7 @@ export type GuildConfig = {
   name: string;
   roles: CoreRoles; // map capabilities
   guildMemberRole?: string; // Optional role granted on character initiation
+  uninitiatedRole?: string; // Role granted when a player retires their last character
   channels: GuildChannels; // generic channels
   features: Features; // domain-specific knobs
 };
@@ -90,6 +91,7 @@ export const DEFAULT_CONFIG: AppConfig = {
         dm: { id: "1333297187353788437" },
       },
       guildMemberRole: "1360283673903235233",
+      uninitiatedRole: "579340109338509356",
       channels: {
         staff: "1401605229996408933",
         resourceTracking: "1347077993830289418",

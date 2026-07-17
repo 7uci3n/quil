@@ -76,10 +76,14 @@ Expected output:
 6. Restart the bot process:
 
    ```bash
-   pm2 restart quil
+   # bare-node deployment (the current unit is still named "bissel-modern")
+   pm2 restart bissel-modern
    # or
-   systemctl restart quil
+   systemctl restart bissel-modern
    ```
+
+   > On the Docker deployment the service is `quil` (see docs/MIGRATION-docker.md):
+   > `docker compose restart quil`
 
 ---
 

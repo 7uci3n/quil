@@ -115,23 +115,26 @@ describe("spendResources (DATA-1)", () => {
   });
 
   it("is all-or-nothing across columns", async () => {
-    await seedChar("s2", "Hero", 1, 5, 1000); // cp = 1000, cc = 5
-    // cp is fine (100) but cc is short (10 > 5) — whole debit must be refused.
+    await seedChar("s2", "Hero", 1, 0, 1000); // cp = 1000, tp = 0
+    // cp is fine (100) but tp is short (1 > 0) — whole debit must be refused.
     expect(
       await spendResources("s2", [
         { column: "cp", amount: 100 },
-        { column: "cc", amount: 10 },
+        { column: "tp", amount: 1 },
       ]),
     ).toBe(false);
     const row = await getPlayer("s2", "Hero");
     expect(row!.cp).toBe(1000);
-    expect(row!.cc).toBe(5);
   });
 
-  it("rejects columns outside the spend allowlist", async () => {
+  it("rejects columns outside the spend allowlist (incl. pooled cc)", async () => {
     await seedChar("s3", "Hero", 1);
     await expect(
       spendResources("s3", [{ column: "level", amount: 1 }]),
+    ).rejects.toThrow();
+    // cc is a pooled resource — never spent via the guarded path.
+    await expect(
+      spendResources("s3", [{ column: "cc", amount: 1 }]),
     ).rejects.toThrow();
   });
 });

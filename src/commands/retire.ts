@@ -135,9 +135,9 @@ export async function handleModal(interaction: ModalSubmitInteraction) {
       const member = await guild.members.fetch(targetId).catch(() => null);
       if (member) {
         const gmRoleId = CONFIG.guild?.config.guildMemberRole;
+        const uninitId = CONFIG.guild?.config.uninitiatedRole;
         const gmRole = gmRoleId ? guild.roles.cache.get(gmRoleId) : undefined;
-        // TODO(QUAL-2): add an "uninitiated" role ID to app.config, resolve by ID.
-        const uninit = guild.roles.cache.find((r) => r.name === "uninitiated");
+        const uninit = uninitId ? guild.roles.cache.get(uninitId) : undefined;
         if (gmRole && member.roles.cache.has(gmRole.id))
           await member.roles.remove(gmRole).catch(() => {});
         if (uninit && !member.roles.cache.has(uninit.id))
@@ -148,7 +148,9 @@ export async function handleModal(interaction: ModalSubmitInteraction) {
 
   const targetMention = `<@${targetId}>`;
   const selfAction = actor.id === targetId;
-  const note = selfAction ? "" : ` (retired by ${actor})`;
+  const note = selfAction
+    ? ""
+    : t("retire.retiredBy", { actor: actor.toString() });
 
   await interaction.reply({
     content: t("retire.userNotice", { name: targetMention }) + note,

@@ -6,7 +6,12 @@ import {
 } from "discord.js";
 import { CONFIG } from "../config/resolved.js";
 import { t } from "../lib/i18n.js";
-import { getPlayer, spendResources } from "../utils/db_queries.js";
+import {
+  getPlayer,
+  getPlayerCC,
+  adjustResource,
+  spendResources,
+} from "../utils/db_queries.js";
 import { updateDTP } from "../domain/resource.js";
 import { toCp, toGp } from "../utils/money.js";
 
@@ -137,9 +142,12 @@ export async function execute(ix: ChatInputCommandInteraction) {
   if (dtpInput > 0 && row.dtp < dtpInput) {
     insufficientResources.push("🔨 DTP");
   }
-  // CC is debited from the active character, so validate against the same scope.
-  if (ccInput > 0 && row.cc < ccInput) {
-    insufficientResources.push("🪙 CC");
+  // CC is a pooled PLAYER resource — validate against the sum across characters.
+  if (ccInput > 0) {
+    const poolCC = await getPlayerCC(user.id);
+    if (poolCC < ccInput) {
+      insufficientResources.push("🪙 CC");
+    }
   }
 
   if (insufficientResources.length > 0) {
@@ -151,32 +159,13 @@ export async function execute(ix: ChatInputCommandInteraction) {
     return;
   }
 
-  // Build resource adjustment arrays
-  const columns: string[] = [];
-  const values: number[] = [];
+  // Character resources (cp/tp/dtp) must not go negative → atomic guarded debit.
+  const guardedDebits: { column: string; amount: number }[] = [];
+  if (gpInput > 0) guardedDebits.push({ column: "cp", amount: toCp(gpInput) });
+  if (gtInput > 0) guardedDebits.push({ column: "tp", amount: gtInput });
+  if (dtpInput > 0) guardedDebits.push({ column: "dtp", amount: dtpInput });
 
-  if (gpInput > 0) {
-    columns.push("cp");
-    values.push(toCp(gpInput) * -1);
-  }
-  if (gtInput > 0) {
-    columns.push("tp");
-    values.push(gtInput * -1);
-  }
-  if (dtpInput > 0) {
-    columns.push("dtp");
-    values.push(dtpInput * -1);
-  }
-  if (ccInput > 0) {
-    columns.push("cc");
-    values.push(ccInput * -1);
-  }
-
-  // Atomic guarded debit — prevents overdraft even under concurrent spends.
-  const debited = await spendResources(
-    user.id,
-    columns.map((column, i) => ({ column, amount: -values[i]! })),
-  );
+  const debited = await spendResources(user.id, guardedDebits);
   if (!debited) {
     await ix.reply({
       flags: MessageFlags.Ephemeral,
@@ -184,6 +173,14 @@ export async function execute(ix: ChatInputCommandInteraction) {
     });
     return;
   }
+
+  // CC is a pooled PLAYER resource: validated against the pool above, debited from
+  // the active character. It MAY go negative here — the pool stays balanced across
+  // the player's characters and is settled on retire. Intentionally not guarded.
+  if (ccInput > 0) {
+    await adjustResource(user.id, ["cc"], [ccInput * -1]);
+  }
+
   const updated = await getPlayer(user.id);
   if (!updated) {
     await ix.reply({
@@ -210,8 +207,9 @@ export async function execute(ix: ChatInputCommandInteraction) {
     balanceParts.push(`🔨 **${updated.dtp} DTP**`);
   }
   if (ccInput > 0) {
+    const poolCC = await getPlayerCC(user.id);
     costParts.push(`🪙 **${ccInput} CC**`);
-    balanceParts.push(`🪙 **${updated.cc} CC**`);
+    balanceParts.push(`🪙 **${poolCC} CC**`);
   }
 
   const costStr = costParts.join(", ");

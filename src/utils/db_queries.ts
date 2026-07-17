@@ -124,11 +124,15 @@ export async function setActive(
 }
 
 /**
- * Debit one or more spendable resources atomically. Each debit only applies if
+ * Debit one or more CHARACTER resources atomically. Each debit only applies if
  * the balance is sufficient (`col >= amount`), enforced in a single guarded
  * UPDATE — so concurrent spends can never overdraw into a negative balance.
  * Column names come from a fixed allowlist; amounts are parameterized.
  * Returns true if the debit was applied, false if funds were insufficient.
+ *
+ * NOTE: `cc` (Crew Coins) is a *pooled player* resource that may legitimately go
+ * negative on a single character, so it is deliberately NOT spendable here —
+ * debit it via `adjustResource` after checking the pool with `getPlayerCC`.
  */
 export async function spendResources(
   userId: string,
@@ -136,7 +140,7 @@ export async function spendResources(
   name = "",
 ): Promise<boolean> {
   const db = getDb();
-  const allowed = ["cp", "tp", "dtp", "cc"];
+  const allowed = ["cp", "tp", "dtp"];
 
   const positive = debits.filter((d) => d.amount > 0);
   if (positive.length === 0) return true;

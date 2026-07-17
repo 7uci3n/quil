@@ -1,5 +1,6 @@
 {
   "charedit": {
+    "updatedBy": [" (updated by {actor})"],
     "rename": {
       "success": [
         "🖋 Done. **{oldName}** has had their name quietly corrected to **{newName}** in the ledger.",

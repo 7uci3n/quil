@@ -80,6 +80,20 @@ describe("Character lifecycle (real code)", () => {
       });
       expect(await getPlayerCC("u")).toBe(80);
     });
+
+    it("lets a character's CC go negative while the pool stays balanced", async () => {
+      await seedTestPlayer(db, { userId: "u", name: "A", cc: 5, active: true });
+      await seedTestPlayer(db, {
+        userId: "u",
+        name: "B",
+        cc: 20,
+        active: false,
+      });
+      // Pool = 25; spend 15 from the active character (A: 5 -> -10). Intended.
+      await adjustResource("u", ["cc"], [-15]);
+      expect((await getPlayer("u", "A"))!.cc).toBe(-10);
+      expect(await getPlayerCC("u")).toBe(10); // -10 + 20, pool balanced
+    });
   });
 
   describe("retireCharacter", () => {

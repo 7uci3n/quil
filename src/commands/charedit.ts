@@ -21,21 +21,21 @@ export const data = new SlashCommandBuilder()
         o
           .setName("new_name")
           .setDescription("The new name for the character")
-          .setRequired(true)
+          .setRequired(true),
       )
       .addStringOption((o) =>
         o
           .setName("character")
           .setDescription("Character to rename (defaults to active character)")
           .setAutocomplete(true)
-          .setRequired(false)
+          .setRequired(false),
       )
       .addUserOption((o) =>
         o
           .setName("user")
           .setDescription("Target user to rename for (Mod+ only)")
-          .setRequired(false)
-      )
+          .setRequired(false),
+      ),
   );
 
 export async function execute(interaction: ChatInputCommandInteraction) {
@@ -48,13 +48,15 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     const isSelf = !targetUser || targetUser.id === interaction.user.id;
 
     if (!isSelf) {
-      const member = await interaction.guild?.members.fetch(interaction.user.id);
+      const member = await interaction.guild?.members.fetch(
+        interaction.user.id,
+      );
       const canManage =
         member?.permissions.has(PermissionFlagsBits.KickMembers) ||
         member?.roles.cache.some((r) =>
           Object.values(CONFIG.guild?.config.roles ?? {})
             .map((role) => role.id)
-            .includes(r.id)
+            .includes(r.id),
         );
       if (!canManage) {
         return interaction.reply({
@@ -101,13 +103,16 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       `UPDATE charlog SET name = ? WHERE userId = ? AND name = ?`,
       newName,
       resolvedUserId,
-      row.name
+      row.name,
     );
     await loadCharCacheFromDB();
 
-    const note = isSelf ? "" : ` (updated by ${interaction.user})`;
+    const note = isSelf
+      ? ""
+      : t("charedit.updatedBy", { actor: interaction.user.toString() });
     return interaction.reply({
-      content: t("charedit.rename.success", { oldName: row.name, newName }) + note,
+      content:
+        t("charedit.rename.success", { oldName: row.name, newName }) + note,
       flags: MessageFlags.Ephemeral,
     });
   }
