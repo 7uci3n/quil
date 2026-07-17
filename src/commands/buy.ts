@@ -6,8 +6,7 @@ import {
 } from "discord.js";
 import { CONFIG } from "../config/resolved.js";
 import { t } from "../lib/i18n.js";
-import { getPlayer, getPlayerCC } from "../utils/db_queries.js";
-import { adjustResource } from "../utils/db_queries.js";
+import { getPlayer, spendResources } from "../utils/db_queries.js";
 import { updateDTP } from "../domain/resource.js";
 
 const CFG = CONFIG.guild!.config;
@@ -131,11 +130,9 @@ export async function execute(ix: ChatInputCommandInteraction) {
   if (dtpInput > 0 && row.dtp < dtpInput) {
     insufficientResources.push("🔨 DTP");
   }
-  if (ccInput > 0) {
-    const playerCC = await getPlayerCC(user.id);
-    if (playerCC < ccInput) {
-      insufficientResources.push("🪙 CC");
-    }
+  // CC is debited from the active character, so validate against the same scope.
+  if (ccInput > 0 && row.cc < ccInput) {
+    insufficientResources.push("🪙 CC");
   }
 
   if (insufficientResources.length > 0) {
@@ -168,7 +165,19 @@ export async function execute(ix: ChatInputCommandInteraction) {
     values.push(ccInput * -1);
   }
 
-  const updated = await adjustResource(user.id, columns, values);
+  // Atomic guarded debit — prevents overdraft even under concurrent spends.
+  const debited = await spendResources(
+    user.id,
+    columns.map((column, i) => ({ column, amount: -values[i]! })),
+  );
+  if (!debited) {
+    await ix.reply({
+      flags: MessageFlags.Ephemeral,
+      content: t("buy.errors.noFunds", { resources: "the requested amount" }),
+    });
+    return;
+  }
+  const updated = await getPlayer(user.id);
   if (!updated) {
     await ix.reply({
       flags: MessageFlags.Ephemeral,
@@ -194,9 +203,8 @@ export async function execute(ix: ChatInputCommandInteraction) {
     balanceParts.push(`🔨 **${updated.dtp} DTP**`);
   }
   if (ccInput > 0) {
-    const playerCC = await getPlayerCC(user.id);
     costParts.push(`🪙 **${ccInput} CC**`);
-    balanceParts.push(`🪙 **${playerCC} CC**`);
+    balanceParts.push(`🪙 **${updated.cc} CC**`);
   }
 
   const costStr = costParts.join(", ");

@@ -2,6 +2,8 @@ import { open, Database } from "sqlite";
 import sqlite3 from "sqlite3";
 import fs from "fs";
 import path from "path";
+import { DEFAULT_CONFIG } from "../config/app.config.js";
+import { dtpDayBoundary } from "../domain/dtp.js";
 
 export type Sqlite = Database<sqlite3.Database, sqlite3.Statement>;
 let _db: Sqlite | null = null;
@@ -125,8 +127,8 @@ export async function migrateDb(dbFile = DEFAULT_DB) {
   const migrate_check3 = await db.get(
     `SELECT * FROM pragma_table_info('charlog') WHERE name = 'dtp_updated';`,
   );
-  const timestamp = new Date().getTime() / 1000;
-  const timestampNormal = timestamp - (timestamp % 86400);
+  const dtpRate = DEFAULT_CONFIG.guild?.config.features.dtp?.rate ?? 1;
+  const timestampNormal = dtpDayBoundary(Date.now() / 1000, dtpRate);
   if (!migrate_check3) {
     await db.exec(`
     ALTER TABLE charlog
@@ -163,6 +165,19 @@ export async function migrateDb(dbFile = DEFAULT_DB) {
     ADD COLUMN cc INTEGER NOT NULL DEFAULT 0;
   `);
   }
+
+  // Enforce "one active character per user": normalize any existing violations
+  // (keep the lowest-rowid active row), then add a partial unique index.
+  await db.exec(`
+    UPDATE charlog SET active = 0
+    WHERE active = 1 AND rowid NOT IN (
+      SELECT MIN(rowid) FROM charlog WHERE active = 1 GROUP BY userId
+    );
+  `);
+  await db.exec(
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_charlog_one_active
+     ON charlog (userId) WHERE active = 1;`,
+  );
 
   console.log(`📂 Database migrations done: ${dbFile}`);
   return db;

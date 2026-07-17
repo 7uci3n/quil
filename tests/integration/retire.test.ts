@@ -6,18 +6,26 @@ import { initDb, migrateDb, closeDb, getDb } from "../../src/db/index.js";
 import {
   retireCharacter,
   setActive,
+  spendResources,
   getPlayer,
 } from "../../src/utils/db_queries.js";
 
 let dbFile: string;
 
-async function seedChar(userId: string, name: string, active: number, cc = 0) {
+async function seedChar(
+  userId: string,
+  name: string,
+  active: number,
+  cc = 0,
+  cp = 0,
+) {
   const db = getDb();
   await db.run(
     `INSERT INTO charlog (userId, name, level, xp, cp, tp, active, dtp, dtp_updated, cc)
-     VALUES (?, ?, 1, 0, 0, 0, ?, 0, 0, ?)`,
+     VALUES (?, ?, 1, 0, ?, 0, ?, 0, 0, ?)`,
     userId,
     name,
+    cp,
     active,
     cc,
   );
@@ -89,5 +97,54 @@ describe("setActive (BUG-4)", () => {
     expect(await setActive("u5", "B")).toBe(true);
     expect((await getPlayer("u5", "B"))!.active).toBeTruthy();
     expect((await getPlayer("u5", "A"))!.active).toBeFalsy();
+  });
+});
+
+describe("spendResources (DATA-1)", () => {
+  it("debits when sufficient and refuses overdraft (balance unchanged)", async () => {
+    await seedChar("s1", "Hero", 1, 0, 1000); // cp = 1000
+    expect(await spendResources("s1", [{ column: "cp", amount: 400 }])).toBe(
+      true,
+    );
+    expect((await getPlayer("s1", "Hero"))!.cp).toBe(600);
+
+    expect(await spendResources("s1", [{ column: "cp", amount: 700 }])).toBe(
+      false,
+    );
+    expect((await getPlayer("s1", "Hero"))!.cp).toBe(600); // untouched
+  });
+
+  it("is all-or-nothing across columns", async () => {
+    await seedChar("s2", "Hero", 1, 5, 1000); // cp = 1000, cc = 5
+    // cp is fine (100) but cc is short (10 > 5) — whole debit must be refused.
+    expect(
+      await spendResources("s2", [
+        { column: "cp", amount: 100 },
+        { column: "cc", amount: 10 },
+      ]),
+    ).toBe(false);
+    const row = await getPlayer("s2", "Hero");
+    expect(row!.cp).toBe(1000);
+    expect(row!.cc).toBe(5);
+  });
+
+  it("rejects columns outside the spend allowlist", async () => {
+    await seedChar("s3", "Hero", 1);
+    await expect(
+      spendResources("s3", [{ column: "level", amount: 1 }]),
+    ).rejects.toThrow();
+  });
+});
+
+describe("one active character invariant (DATA-4)", () => {
+  it("rejects a second active row via the partial unique index", async () => {
+    await seedChar("i1", "A", 1);
+    const db = getDb();
+    await expect(
+      db.run(
+        `INSERT INTO charlog (userId, name, level, xp, cp, tp, active, dtp, dtp_updated, cc)
+         VALUES ('i1', 'B', 1, 0, 0, 0, 1, 0, 0, 0)`,
+      ),
+    ).rejects.toThrow();
   });
 });

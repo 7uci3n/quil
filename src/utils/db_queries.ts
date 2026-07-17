@@ -102,17 +102,74 @@ export async function setActive(
 
   if (!(await getPlayer(userId, name))) return false;
 
-  await db.run(
-    `UPDATE charlog SET active = 0 WHERE userId = ? AND name != ?`,
-    userId,
-    name,
-  );
-  await db.run(
-    `UPDATE charlog SET active = 1 WHERE userId = ? AND name = ?`,
-    userId,
-    name,
-  );
+  // Atomic flip so we never leave zero or two active characters for a user.
+  await db.exec("BEGIN");
+  try {
+    await db.run(
+      `UPDATE charlog SET active = 0 WHERE userId = ? AND name != ?`,
+      userId,
+      name,
+    );
+    await db.run(
+      `UPDATE charlog SET active = 1 WHERE userId = ? AND name = ?`,
+      userId,
+      name,
+    );
+    await db.exec("COMMIT");
+  } catch (err) {
+    await db.exec("ROLLBACK");
+    throw err;
+  }
   return true;
+}
+
+/**
+ * Debit one or more spendable resources atomically. Each debit only applies if
+ * the balance is sufficient (`col >= amount`), enforced in a single guarded
+ * UPDATE — so concurrent spends can never overdraw into a negative balance.
+ * Column names come from a fixed allowlist; amounts are parameterized.
+ * Returns true if the debit was applied, false if funds were insufficient.
+ */
+export async function spendResources(
+  userId: string,
+  debits: { column: string; amount: number }[],
+  name = "",
+): Promise<boolean> {
+  const db = getDb();
+  const allowed = ["cp", "tp", "dtp", "cc"];
+
+  const positive = debits.filter((d) => d.amount > 0);
+  if (positive.length === 0) return true;
+
+  for (const d of positive) {
+    if (!allowed.includes(d.column)) {
+      throw new Error(`Invalid spend column: ${d.column}`);
+    }
+  }
+
+  const setClause = positive
+    .map((d) => `${d.column} = ${d.column} - ?`)
+    .join(", ");
+  const guardClause = positive.map((d) => `${d.column} >= ?`).join(" AND ");
+  const scope = name.trim() !== "" ? "AND name = ?" : "AND active = 1";
+
+  const sql = `
+    UPDATE charlog
+    SET ${setClause}
+    WHERE userId = ?
+    ${scope}
+    AND ${guardClause}
+  `;
+
+  const params: (string | number)[] = [
+    ...positive.map((d) => d.amount), // SET col = col - ?
+    userId,
+    ...(name.trim() !== "" ? [name] : []),
+    ...positive.map((d) => d.amount), // guard: col >= ?
+  ];
+
+  const result = await db.run(sql, params);
+  return (result.changes ?? 0) > 0;
 }
 
 /**

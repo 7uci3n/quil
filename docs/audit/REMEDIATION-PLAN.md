@@ -39,15 +39,15 @@ you touch logic.
 
 ## Phase 2 — Data integrity & atomicity
 
-- [ ] `DATA-1` 🟠 atomic conditional debit (no negative balances)
-- [ ] `DATA-2` 🟠 wrap `/retire` in a transaction (done with `SEC-1`)
-- [ ] `DATA-3` 🟠 fix `/buy` CC scope
-- [x] `DATA-7` 🟠 `/sync` rollback on error _(done in Phase 1 with BUG-6)_
-- [~] `DATA-4` 🟡 `setActive` now `db.run` + returns boolean (Phase 1); transaction + partial unique index still TODO
-- [ ] `DATA-5` 🟡 consistent DTP normalization + rounding
-- [ ] `DATA-6` 🟡 correct `dmrewards.json` anomalies
-- [ ] `BUG-5` 🟠 validate all `/reward` recipients before applying
-- **Exit:** Every money-mutating command is atomic; a concurrency test suite proves it.
+- [x] `DATA-1` 🟠 new `spendResources()` does a single guarded `UPDATE … WHERE col >= ?` (all-or-nothing); `/buy` uses it. No overdraft even under concurrency. Tested.
+- [x] `DATA-2` 🟠 `/retire` transaction (done in Phase 1 with `SEC-1`).
+- [x] `DATA-3` 🟠 `/buy` validates + debits CC on the **active** character (consistent scope). _Note: treats CC as active-char-scoped, not a cross-character pool — confirm that's the intended game rule (see open question)._
+- [x] `DATA-7` 🟠 `/sync` rollback on error (done in Phase 1 with BUG-6).
+- [x] `DATA-4` 🟡 `setActive` now transactional; `/initiate` inserts inactive then activates; migration normalizes existing violations + adds a **partial unique index** `(userId) WHERE active = 1`. Verified against a pre-existing 2-active row. Tested.
+- [x] `DATA-5` 🟡 shared `src/domain/dtp.ts` (`dtpPeriod`/`dtpDayBoundary`, rounded) used by `updateDTP`, `/initiate`, and the migration default. Tested.
+- [ ] `DATA-6` 🟡 **BLOCKED — needs game-design input.** `dmrewards.json` L20 `xp:625` and L7 `xp:1650` look wrong, but the correct values aren't knowable from code. Awaiting confirmation of intended reward numbers.
+- [x] `BUG-5` 🟠 `/reward custom` validates **all** recipients before applying any delta (no partial awards).
+- **Exit ✅ (except DATA-6):** every money-mutating command is atomic (`spendResources`/transactions); one-active enforced at the DB. lint + typecheck + 65 tests green; migration prod-verified. DATA-6 needs a human decision.
 
 ## Phase 3 — Dead code & duplication
 

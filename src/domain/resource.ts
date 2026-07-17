@@ -1,5 +1,6 @@
 import { CONFIG } from "../config/resolved.js";
 import { adjustResource, getPlayer } from "../utils/db_queries.js";
+import { dtpDayBoundary, dtpPeriod } from "./dtp.js";
 
 const CFG = CONFIG.guild!.config;
 const DTP_RATE = CFG.features.dtp?.rate || 1;
@@ -19,12 +20,9 @@ export async function updateDTP(
     return row.dtp;
   }
 
-  const timestamp = Math.round(new Date().getTime() / 1000);
-  const timestampNormal =
-    timestamp - (timestamp % Math.round(86400 / DTP_RATE));
+  const timestampNormal = dtpDayBoundary(Date.now() / 1000, DTP_RATE);
   const dtpcalc =
-    row.dtp +
-    (timestampNormal - row.dtp_updated) / Math.round(86400 / DTP_RATE);
+    row.dtp + (timestampNormal - row.dtp_updated) / dtpPeriod(DTP_RATE);
 
   // Cap at maximum
   const dtpFinal = Math.min(dtpcalc, DTP_MAX);

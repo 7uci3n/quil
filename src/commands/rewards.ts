@@ -10,7 +10,11 @@ import {
 } from "discord.js";
 
 import { CONFIG } from "../config/resolved.js";
-import { adjustResource, getPlayer } from "../utils/db_queries.js";
+import {
+  adjustResource,
+  getPlayer,
+  type PlayerRow,
+} from "../utils/db_queries.js";
 
 // Domain logic
 import {
@@ -270,8 +274,8 @@ async function handleCustom(ix: ChatInputCommandInteraction) {
     return;
   }
 
-  const fields: { name: string; value: string; inline?: boolean }[] = [];
-
+  // Validate ALL recipients before mutating anyone — no partial awards.
+  const resolved: { u: User; before: PlayerRow }[] = [];
   for (const [u, c] of recipients) {
     const before = await getPlayer(u.id, c ?? "");
     if (!before) {
@@ -281,7 +285,12 @@ async function handleCustom(ix: ChatInputCommandInteraction) {
       });
       return;
     }
+    resolved.push({ u, before });
+  }
 
+  const fields: { name: string; value: string; inline?: boolean }[] = [];
+
+  for (const { u, before } of resolved) {
     const level = levelForXP(before.xp);
 
     let tp = 0;
