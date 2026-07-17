@@ -22,7 +22,8 @@ import {
   computeDmReward,
   applyResourceDeltas,
 } from "../domain/rewards.js";
-import { levelForXP, proficiencyFor } from "../domain/xp.js";
+import { levelForXP } from "../domain/xp.js";
+import { announceLevelChange } from "../utils/announce.js";
 
 import { t } from "../lib/i18n.js";
 
@@ -43,8 +44,6 @@ const PERMS = {
   ],
   staff: [ROLE.moderator.id, ROLE.admin.id, ROLE.keeper.id],
 };
-
-const REWARDS_CHANNEL_ID = CFG.channels?.resourceTracking;
 
 /* ──────────────────────────────────────────────────────────────────────────────
    SLASH COMMAND DEFINITION
@@ -187,37 +186,6 @@ function collectUsers(
 
 function fmtGp(cp: number) {
   return (cp / 100).toFixed(2);
-}
-
-async function announceLevelChange(
-  ix: ChatInputCommandInteraction,
-  userId: string,
-  displayName: string,
-  newLevel: number,
-  diff: number,
-) {
-  const msg =
-    diff > 0
-      ? t("reward.announce.levelUp", {
-          mention: userMention(userId),
-          display: displayName,
-          level: newLevel,
-          prof: proficiencyFor(newLevel),
-        })
-      : t("reward.announce.levelDown", {
-          mention: userMention(userId),
-          display: displayName,
-          level: newLevel,
-        });
-  const guild = ix.guild;
-  const target =
-    (guild &&
-      REWARDS_CHANNEL_ID &&
-      guild.channels.cache.get(REWARDS_CHANNEL_ID)) ||
-    ix.channel;
-
-  // @ts-expect-error narrowing omitted
-  await target?.send(msg);
 }
 
 /* CUSTOM: explicit xp/gp/tp to multiple users (optional auto TP) */

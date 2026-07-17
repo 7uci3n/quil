@@ -33,19 +33,6 @@
       "nextNone": "\u2014"
     },
 
-    "announce": {
-      "levelUp": [
-        "\uD83C\uDF89 **{display}** reached level **{level}**! (Proficiency +{prof})",
-        "\uD83C\uDF89 Level up logged: **{display}** \u2192 **L{level}** (Prof +{prof}).",
-        "\uD83C\uDF89 **{display}** advances to **L{level}**. Proficiency +{prof} noted."
-      ],
-      "levelDown": [
-        "\u2198\uFE0F **{display}** dropped to level **{level}**.",
-        "\u2198\uFE0F Adjustment recorded: **{display}** is now **L{level}**.",
-        "\u2198\uFE0F **{display}** reduced to **L{level}**."
-      ]
-    },
-
     "add": {
       "ok": [
         "OK. {mention}'s adventurer: {name}: **+{amt} XP** \u2192 {newXp} XP, level {oldLevel} \u2192 {newLevel}. {reasonLine}"

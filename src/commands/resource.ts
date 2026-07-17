@@ -13,12 +13,8 @@ import { validateCommandPermissions } from "../config/validaters.js";
 import { adjustResource, getPlayer, getPlayerCC } from "../utils/db_queries.js";
 import { updateDTP } from "../domain/resource.js";
 import { showCharacterEmbed } from "../utils/embeds.js";
-import {
-  announceLevelChange,
-  bandFor,
-  levelForXP,
-  proficiencyFor,
-} from "../domain/xp.js";
+import { bandFor, levelForXP, proficiencyFor } from "../domain/xp.js";
+import { announceLevelChange } from "../utils/announce.js";
 import { toCp, toGp } from "../utils/money.js";
 
 const CFG = CONFIG.guild!.config;
@@ -247,13 +243,7 @@ export async function execute(ix: ChatInputCommandInteraction) {
       const changed = levelNew - row.level;
       if (changed !== 0) {
         await adjustResource(user.id, ["level"], [levelNew], true, next.name);
-        await announceLevelChange(
-          ix,
-          next.name,
-          levelNew,
-          changed,
-          proficiencyFor(levelNew),
-        );
+        await announceLevelChange(ix, user.id, next.name, levelNew, changed);
       }
       //level up stuff
     } else if (resource === "cc") {
