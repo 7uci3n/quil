@@ -12,7 +12,15 @@ import {
 } from "discord.js";
 import { CONFIG } from "../config/resolved.js";
 import { t } from "../lib/i18n.js";
+import { requireRole } from "../config/validators.js";
 import { retireCharacter, loadCharCacheFromDB } from "../utils/db_queries.js";
+
+const CFG = CONFIG.guild!.config;
+const STAFF_ROLE_IDS = [
+  CFG.roles.moderator.id,
+  CFG.roles.admin.id,
+  CFG.roles.keeper.id,
+].filter(Boolean) as string[];
 
 export const data = new SlashCommandBuilder()
   .setName("retire")
@@ -38,22 +46,14 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   const char = interaction.options.getString("character");
   const isSelf = !targetUser || targetUser.id === interaction.user.id;
 
-  // Permission check for mod actions
+  // Retiring another player's character is staff-only (ADR-0007).
   if (!isSelf) {
-    const member = await interaction.guild?.members.fetch(interaction.user.id);
-    const canManage =
-      member?.permissions.has(PermissionFlagsBits.KickMembers) ||
-      member?.roles.cache.some((r) =>
-        Object.values(CONFIG.guild?.config.roles ?? {})
-          .map((role) => role.id)
-          .includes(r.id),
-      );
-    if (!canManage) {
-      return interaction.reply({
-        content: "Only moderators or staff can retire another adventurer.",
-        flags: MessageFlags.Ephemeral,
-      });
-    }
+    const member = await requireRole(
+      interaction,
+      STAFF_ROLE_IDS,
+      "retire.noPermission",
+    );
+    if (!member) return;
   }
 
   // Build modal

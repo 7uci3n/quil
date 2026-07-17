@@ -1,6 +1,11 @@
 {
   "retire": {
     "retiredBy": [" (retired by {actor})"],
+    "noPermission": [
+      "🖋 Only crew staff can retire another adventurer.",
+      "🖋 Misfiled. You don't have authority to retire someone else's record.",
+      "🖋 The ledger restricts that action to staff. Nice try."
+    ],
     "invalidName": [
       "🖋 That name has characters the ledger won't accept — letters, numbers, spaces, apostrophes and hyphens only."
     ],

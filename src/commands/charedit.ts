@@ -2,13 +2,20 @@
 import {
   SlashCommandBuilder,
   ChatInputCommandInteraction,
-  PermissionFlagsBits,
   MessageFlags,
 } from "discord.js";
 import { getDb } from "../db/index.js";
 import { CONFIG } from "../config/resolved.js";
 import { getPlayer, loadCharCacheFromDB } from "../utils/db_queries.js";
 import { t } from "../lib/i18n.js";
+import { requireRole, requireChannel } from "../config/validators.js";
+
+const CFG = CONFIG.guild!.config;
+const STAFF_ROLE_IDS = [
+  CFG.roles.moderator.id,
+  CFG.roles.admin.id,
+  CFG.roles.keeper.id,
+].filter(Boolean) as string[];
 
 export const data = new SlashCommandBuilder()
   .setName("charedit")
@@ -42,28 +49,24 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   const sub = interaction.options.getSubcommand(true);
 
   if (sub === "rename") {
+    // Renames are recorded in the character-submissions forum (ADR-0007).
+    if (!(await requireChannel(interaction, CFG.channels.charSubmissions)))
+      return;
+
     const targetUser = interaction.options.getUser("user");
     const charName = interaction.options.getString("character");
     const newName = interaction.options.getString("new_name", true).trim();
+    // Kept solely to append an audit note on the public success message.
     const isSelf = !targetUser || targetUser.id === interaction.user.id;
 
+    // Renaming another player's character is staff-only (ADR-0007).
     if (!isSelf) {
-      const member = await interaction.guild?.members.fetch(
-        interaction.user.id,
+      const member = await requireRole(
+        interaction,
+        STAFF_ROLE_IDS,
+        "charedit.rename.noPermission",
       );
-      const canManage =
-        member?.permissions.has(PermissionFlagsBits.KickMembers) ||
-        member?.roles.cache.some((r) =>
-          Object.values(CONFIG.guild?.config.roles ?? {})
-            .map((role) => role.id)
-            .includes(r.id),
-        );
-      if (!canManage) {
-        return interaction.reply({
-          content: t("charedit.rename.noPermission"),
-          flags: MessageFlags.Ephemeral,
-        });
-      }
+      if (!member) return;
     }
 
     if (!/^[a-zA-Z0-9'\- ]+$/.test(newName)) {
@@ -106,10 +109,10 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     const note = isSelf
       ? ""
       : t("charedit.updatedBy", { actor: interaction.user.toString() });
+    // Public on purpose: the forum post is the audit record of the rename.
     return interaction.reply({
       content:
         t("charedit.rename.success", { oldName: row.name, newName }) + note,
-      flags: MessageFlags.Ephemeral,
     });
   }
 }

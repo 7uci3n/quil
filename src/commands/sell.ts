@@ -9,6 +9,7 @@ import { getPlayer } from "../utils/db_queries.js";
 import { adjustResource } from "../utils/db_queries.js";
 
 import { t } from "../lib/i18n.js";
+import { requireChannel } from "../config/validators.js";
 import { toCp, toGp } from "../utils/money.js";
 
 const CFG = CONFIG.guild!.config;
@@ -33,21 +34,13 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function execute(ix: ChatInputCommandInteraction) {
-  // Basic permission scaffold (everyone can use; still validates bot perms)
-
-  // Channel guard: only allowed in Resource channel (or test override if you use one)
-  const isInAllowedChannel =
-    ix.channelId === REWARDS_CHANNEL_ID ||
-    ix.channelId === MAGIC_ITEMS_CHANNEL_ID;
-  const isInConfiguredGuild = ix.guildId === CONFIG.guild?.id;
-
-  if (!isInAllowedChannel && isInConfiguredGuild) {
-    await ix.reply({
-      flags: MessageFlags.Ephemeral,
-      content: t("sell.notInResourceChannel"),
-    });
+  // Channel guard: resource + magic-items channels only (skipped outside the guild).
+  if (
+    !(await requireChannel(ix, [REWARDS_CHANNEL_ID, MAGIC_ITEMS_CHANNEL_ID], {
+      errorKey: "sell.notInResourceChannel",
+    }))
+  )
     return;
-  }
 
   const member = ix.member as GuildMember;
   const user = member.user;
