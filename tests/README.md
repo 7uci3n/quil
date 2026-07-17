@@ -4,9 +4,19 @@
 
 The Quil bot uses **Vitest** for automated testing with a three-tier approach:
 
-1. **Unit tests** - Domain logic (XP, rewards, resource calculations)
-2. **Integration tests** - Database operations (character lifecycle, LFG workflow)
-3. **Command tests** - (Future) Discord interaction handlers
+1. **Unit tests** (`tests/unit/`) - Pure/domain logic and small utils (XP, rewards,
+   resource math, i18n, money, embeds, autocomplete, validators, gsheet mapping).
+2. **Integration tests** (`tests/integration/`) - DB operations against a real
+   temp-file SQLite (character lifecycle, LFG persistence, schema/migrations).
+3. **Command / feature tests** (`tests/commands/`, `tests/features/`) - every
+   slash-command `execute()` and the LFG feature handlers, driven end-to-end via
+   mocked Discord interactions (`tests/fixtures/mock-interactions.ts`) against a
+   real temp DB.
+
+Coverage is enforced in `vitest.config.ts` (v8 provider) and clears the project's
+80% quality gate on all four metrics. The composition root `src/core/bot.ts`
+(constructs the Client and calls `client.login()` at import) and `src/scripts/**`
+are excluded as un-unit-testable entrypoints.
 
 ## Running Tests
 
@@ -107,8 +117,15 @@ Inserts a character with defaults:
 **`cleanupTestDb(db)`**  
 Closes database connection.
 
-**`createMockInteraction(options)`**  
-(Future) Mock Discord interaction for command tests.
+**`makeInteraction(opts)`** (from `fixtures/mock-interactions.ts`)  
+Builds a fake `ChatInputCommandInteraction` (options getters, `reply`/`editReply`/
+`deferReply`/`followUp`/`showModal` spies, `user`/`member`/`guild`). Companions:
+`makeUser`, `makeMember`, `makeGuild`, `makeRole`, `makeChannel`,
+`makeAutocomplete`, `makeModalSubmit`. Cast to the real discord.js types, they let
+command handlers run for real against a temp DB.
+
+> Note: several handlers call `showCharacterEmbed()` fire-and-forget (no `await`),
+> so the reply lands a tick later — `await` a short `flush()` before asserting on it.
 
 ## Coverage
 

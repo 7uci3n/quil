@@ -24,7 +24,7 @@ function fakeInteraction(opts: {
   channelId?: string | null;
   parentId?: string | null;
 }) {
-  const reply = vi.fn(async () => undefined);
+  const reply = vi.fn(async (_opts?: unknown) => undefined);
   const channel =
     opts.parentId !== undefined ? { parentId: opts.parentId } : undefined;
   const guild =
