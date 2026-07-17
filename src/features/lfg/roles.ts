@@ -1,11 +1,13 @@
 // LFG Discord-role synchronisation (extracted from commands/lfg.ts).
 import type { GuildMember } from "discord.js";
 import { CONFIG } from "../../config/resolved.js";
-import { anyTierOn, type LfgEntry, type LfgTier } from "../../domain/lfg.js";
+import { type LfgEntry, type LfgTier } from "../../domain/lfg.js";
 
 const LFG_FEATURE = CONFIG.guild?.config.features?.lfg;
 
-export const LFG_BASE_ROLE_ID = LFG_FEATURE?.roles?.lfg;
+// NOTE: the base "Future Scheduling LFG" role is assigned via the server's
+// self-service role menu, so the bot MUST NOT add or remove it (ADR-0005).
+// Only the per-tier roles below are bot-managed.
 export const LFG_TIER_ROLE_IDS: Record<LfgTier, string | undefined> = {
   low: LFG_FEATURE?.tiers?.low,
   mid: LFG_FEATURE?.tiers?.mid,
@@ -30,13 +32,7 @@ export async function removeRoleById(
 }
 
 export async function syncRolesFor(member: GuildMember, entry: LfgEntry) {
-  // Base LFG role
-  if (anyTierOn(entry)) {
-    await addRoleById(member, LFG_BASE_ROLE_ID);
-  } else {
-    await removeRoleById(member, LFG_BASE_ROLE_ID);
-  }
-  // Tier roles
+  // Tier roles only — the base LFG role is self-service (see note above).
   const shouldHave: Array<[LfgTier, boolean]> = [
     ["low", !!entry.low],
     ["mid", !!entry.mid],

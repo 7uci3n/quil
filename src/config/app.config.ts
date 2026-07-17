@@ -33,7 +33,8 @@ export type LfgFeatureConfig = {
   };
 
   roles?: {
-    lfg: string;
+    // The base "Future Scheduling LFG" role is self-service (server role menu),
+    // so it is intentionally NOT configured here — the bot never touches it.
     dmAvailable?: string;
   };
 
@@ -110,7 +111,7 @@ export const DEFAULT_CONFIG: AppConfig = {
             pingForDM: "1406359212690243634",
           },
           roles: {
-            lfg: "1370483275017228400",
+            // base "Future Scheduling LFG" role omitted on purpose (self-service)
             dmAvailable: "1421200706689568860",
           },
           tiers: {
