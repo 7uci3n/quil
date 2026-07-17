@@ -27,7 +27,7 @@ tracking, and guild operations, with a dry-witted "ledger quill" personality.
 - **Language:** TypeScript 5.9 (strict, `noUncheckedIndexedAccess`), ESM (`"type": "module"`)
 - **Runtime:** Node.js 20+ (dev via `tsx watch`, prod via compiled `dist/`)
 - **Platform:** discord.js v14 — slash commands
-- **Database:** SQLite (`better-sqlite3`, WAL mode)
+- **Database:** SQLite — async `sqlite` wrapper over `sqlite3`, WAL mode (`src/db/index.ts`). NB: `better-sqlite3` is declared in package.json but **unused** (see docs/audit `DEP-1`)
 - **Validation:** zod
 - **Testing:** vitest (unit + integration, in-memory SQLite)
 - **Tooling:** ESLint 9 (flat config) + Prettier
