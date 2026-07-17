@@ -3,6 +3,7 @@
 ## Overview
 
 The Quil bot uses **Vitest** for automated testing with a three-tier approach:
+
 1. **Unit tests** - Domain logic (XP, rewards, resource calculations)
 2. **Integration tests** - Database operations (character lifecycle, LFG workflow)
 3. **Command tests** - (Future) Discord interaction handlers
@@ -38,11 +39,11 @@ tests/
 Test pure functions from `src/domain/`:
 
 ```typescript
-import { describe, it, expect } from 'vitest';
-import { levelForXP } from '../../src/domain/xp.js';
+import { describe, it, expect } from "vitest";
+import { levelForXP } from "../../src/domain/xp.js";
 
-describe('XP Calculations', () => {
-  it('should return correct level for XP', () => {
+describe("XP Calculations", () => {
+  it("should return correct level for XP", () => {
     expect(levelForXP(0)).toBe(1);
     expect(levelForXP(300)).toBe(2);
   });
@@ -54,10 +55,14 @@ describe('XP Calculations', () => {
 Use in-memory SQLite with test fixtures:
 
 ```typescript
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { createTestDb, seedTestPlayer, cleanupTestDb } from '../fixtures/test-db.js';
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import {
+  createTestDb,
+  seedTestPlayer,
+  cleanupTestDb,
+} from "../fixtures/test-db.js";
 
-describe('Character Operations', () => {
+describe("Character Operations", () => {
   let db;
 
   beforeEach(async () => {
@@ -68,15 +73,18 @@ describe('Character Operations', () => {
     await cleanupTestDb(db); // Cleanup
   });
 
-  it('should create character', async () => {
+  it("should create character", async () => {
     await seedTestPlayer(db, {
-      userId: 'user123',
-      name: 'Hero',
+      userId: "user123",
+      name: "Hero",
       level: 5,
       active: true,
     });
 
-    const char = await db.get('SELECT * FROM charlog WHERE userId = ?', 'user123');
+    const char = await db.get(
+      "SELECT * FROM charlog WHERE userId = ?",
+      "user123",
+    );
     expect(char?.level).toBe(5);
   });
 });
@@ -89,6 +97,7 @@ Creates in-memory SQLite database with full schema (charlog, lfg_status, etc.).
 
 **`seedTestPlayer(db, options)`**  
 Inserts a character with defaults:
+
 - `userId` (required)
 - `name` (required)
 - `level` (default: 1)
@@ -106,12 +115,14 @@ Closes database connection.
 Run `npm run test:coverage` to generate reports in `coverage/` directory.
 
 **Focus areas**:
+
 - Domain logic (xp.ts, rewards.ts, resource.ts)
 - Database queries (db_queries.ts, db/lfg.ts)
 - Character lifecycle workflows
 - LFG tier assignments and purging
 
 **Not covered** (by design):
+
 - Discord.js library code
 - Network requests to Discord API
 - Command registration scripts
@@ -126,15 +137,18 @@ Run `npm run test:coverage` to generate reports in `coverage/` directory.
 
 ## Troubleshooting
 
-**Tests failing with "SQLITE_CONSTRAINT"**  
+**Tests failing with "SQLITE_CONSTRAINT"**
+
 - Check schema in [tests/fixtures/test-db.ts](tests/fixtures/test-db.ts) matches production
 - Ensure all NOT NULL columns have values in seed data
 
-**Import errors**  
+**Import errors**
+
 - Use `.js` extensions: `import { x } from './file.js'` (even for `.ts` files)
 - Check ES module config in vitest.config.ts
 
-**Slow tests**  
+**Slow tests**
+
 - Use in-memory DB (`:memory:`) not file-based
 - Avoid unnecessary `beforeEach` setup
 - Parallelize independent test files

@@ -3,6 +3,7 @@
 ## SQLITE_READONLY Error Root Cause
 
 The error occurs because:
+
 1. **WAL Mode Files**: SQLite in WAL mode creates `-wal` and `-shm` files alongside the database
 2. **Permission Requirements**: These files require write permissions on both files AND the directory
 3. **Migration Issue**: Previously, `migrateDb()` wasn't setting WAL mode, causing inconsistent journal states
@@ -16,12 +17,14 @@ The error occurs because:
 ## Production Deployment Checklist
 
 ### 1. Check Service User
+
 ```bash
 systemctl show -p User,Group bissel.service
 # Should show: User=quil, Group=quil
 ```
 
 ### 2. Verify File Permissions
+
 ```bash
 cd /srv/bissel-modern
 ls -la data/
@@ -34,6 +37,7 @@ ls -la data/
 ```
 
 ### 3. Fix Permissions (if needed)
+
 ```bash
 sudo chown -R quil:quil /srv/bissel-modern/data/
 sudo chmod 755 /srv/bissel-modern/data/
@@ -41,6 +45,7 @@ sudo chmod 644 /srv/bissel-modern/data/remnant.sqlite*
 ```
 
 ### 4. Running Migrations
+
 ```bash
 # Option A: Run as service user (recommended)
 sudo -u quil npm run db:migrate
@@ -53,6 +58,7 @@ npm run db:migrate
 ```
 
 ### 5. Deployment Steps
+
 ```bash
 # 1. Stop service
 sudo systemctl stop bissel
@@ -80,15 +86,18 @@ journalctl -u bissel -f  # Follow logs
 ## Common Pitfalls
 
 ### ❌ Running migrations as root
+
 - Migration creates files owned by root
 - Service user `quil` can't access them
 - **Solution**: Always run migrations as the service user
 
 ### ❌ 777 permissions
+
 - While this works, it's a security risk
 - **Better**: Use proper ownership with 644/755
 
 ### ❌ Forgetting to rebuild
+
 - Old compiled code in `dist/` won't include fixes
 - **Always**: `npm run build` before restarting service
 
@@ -113,6 +122,7 @@ journalctl -u bissel --since "1 hour ago" | grep -i "readonly\|permission"
 ## Quick Fix Script
 
 Run the diagnostic script to automatically check and suggest fixes:
+
 ```bash
 chmod +x check-permissions.sh
 ./check-permissions.sh

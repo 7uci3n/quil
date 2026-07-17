@@ -46,7 +46,7 @@
 
 - toCp(gp: number): number — converts GP to CP using 100 CP = 1 GP (rounded).
 - toGp(cp: number): string — converts integer CP back to a GP string with two decimals.
-- getPlayer(userId: string) — SELECT * FROM charlog WHERE userId = ?; returns a PlayerRow or undefined.
+- getPlayer(userId: string) — SELECT \* FROM charlog WHERE userId = ?; returns a PlayerRow or undefined.
 - subCp(userId: string, deltaCp: number) — UPDATE charlog SET cp = cp - ? WHERE userId = ?; performs the subtraction.
 
 ## Validation and errors
@@ -74,7 +74,7 @@
 ## Edge cases & notes for maintainers
 
 - Race conditions: The command does a read -> update -> read. Concurrency could cause small inconsistencies if multiple commands change CP for the same user concurrently. If strict consistency is needed consider using a single UPDATE with RETURNING (if supported by the DB) or running the two statements in a transaction.
-- Precision / rounding: `toCp` uses Math.round(gp * 100) and the command rejects inputs that are not exact to two decimals. This prevents floating-point surprises but requires the frontend/UX to only allow two decimal places.
+- Precision / rounding: `toCp` uses Math.round(gp \* 100) and the command rejects inputs that are not exact to two decimals. This prevents floating-point surprises but requires the frontend/UX to only allow two decimal places.
 - Non-existent player rows: The command currently fails gracefully and informs the user to create/initialize their character before buying. There is no automatic row creation.
 - Bot permissions: The bot must be able to send messages in the resource-tracking channel. The code does not check granular channel permissions beyond the channel id guard.
 - Embeds: The code contains commented-out `EmbedBuilder` logic. If you re-enable it, ensure the embed content is localized and tested for length.
@@ -102,10 +102,10 @@
 - Related commands: `sell`, `gp`, `guildfund` in `src/commands/` — they likely share patterns for currency handling.
 - DB schema & migrations: `data/migrations` and `src/db` for `charlog` structure and access patterns.
 
- Maintainer contact
+Maintainer contact
 
 - Author: see git history for `src/commands/buy.ts`.
 
- ---
+  ***
 
- This document was generated from the implementation at `src/commands/buy.ts`. Keep it updated if the code changes.
+This document was generated from the implementation at `src/commands/buy.ts`. Keep it updated if the code changes.

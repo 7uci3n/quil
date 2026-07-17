@@ -1,69 +1,67 @@
 {
   "xp": {
-
-  "errors": {
-    "notInSystem": [
-      "{username} has no recorded XP.",
-      "No XP record for {username}. Try /initiate first.",
-      "I can't find {username} in the ledger."
-    ],
-    "amountMin1": [
-      "Amount must be \u2265 1.",
-      "Use a positive integer (1 or more).",
-      "XP to add must be at least 1."
-    ],
-    "amountMin0": [
-      "Amount must be \u2265 0.",
-      "Use a non-negative integer.",
-      "Zero or more, please."
-    ]
-  },
-
-  "show": {
-    "author": "{name} \u2014 XP Overview",
-    "fields": {
-      "level": "\u2B06\uFE0F Level",
-      "xp": "\uD83D\uDCAA XP",
-      "prof": "\u2694\uFE0F Proficiency",
-      "next": "\u27A1\uFE0F Next Threshold",
-      "progress": "\uD83D\uDCC8 Progress",
-      "max": "\u2B50 Max level reached."
+    "errors": {
+      "notInSystem": [
+        "{username} has no recorded XP.",
+        "No XP record for {username}. Try /initiate first.",
+        "I can't find {username} in the ledger."
+      ],
+      "amountMin1": [
+        "Amount must be \u2265 1.",
+        "Use a positive integer (1 or more).",
+        "XP to add must be at least 1."
+      ],
+      "amountMin0": [
+        "Amount must be \u2265 0.",
+        "Use a non-negative integer.",
+        "Zero or more, please."
+      ]
     },
-    "progressFmt": "`{pct}%`  ({curr} / {range})",
-    "nextFmt": "{nextXp} XP (to L{nextLevel})",
-    "nextNone": "\u2014"
-  },
 
-  "announce": {
-    "levelUp": [
-      "\uD83C\uDF89 **{display}** reached level **{level}**! (Proficiency +{prof})",
-      "\uD83C\uDF89 Level up logged: **{display}** \u2192 **L{level}** (Prof +{prof}).",
-      "\uD83C\uDF89 **{display}** advances to **L{level}**. Proficiency +{prof} noted."
-    ],
-    "levelDown": [
-      "\u2198\uFE0F **{display}** dropped to level **{level}**.",
-      "\u2198\uFE0F Adjustment recorded: **{display}** is now **L{level}**.",
-      "\u2198\uFE0F **{display}** reduced to **L{level}**."
-    ]
-  },
+    "show": {
+      "author": "{name} \u2014 XP Overview",
+      "fields": {
+        "level": "\u2B06\uFE0F Level",
+        "xp": "\uD83D\uDCAA XP",
+        "prof": "\u2694\uFE0F Proficiency",
+        "next": "\u27A1\uFE0F Next Threshold",
+        "progress": "\uD83D\uDCC8 Progress",
+        "max": "\u2B50 Max level reached."
+      },
+      "progressFmt": "`{pct}%`  ({curr} / {range})",
+      "nextFmt": "{nextXp} XP (to L{nextLevel})",
+      "nextNone": "\u2014"
+    },
 
-  "add": {
-    "ok": [
-      "OK. {mention}'s adventurer: {name}: **+{amt} XP** \u2192 {newXp} XP, level {oldLevel} \u2192 {newLevel}. {reasonLine}"
-    ]
-  },
-  "adjust": {
-    "ok": [
-      "OK. {mention}'s adventurer: {name}: **{sign}{absAmt} XP** \u2192 {newXp} XP, level {oldLevel} \u2192 {newLevel}. {reasonLine}"
-    ]
-  },
-  "set": {
-    "ok": [
-      "OK. {mention}'s adventurer: {name}: set to **{newXp} XP** \u2192 level **{newLevel}** (was L{oldLevel}). {reasonLine}"
-    ]
-  },
+    "announce": {
+      "levelUp": [
+        "\uD83C\uDF89 **{display}** reached level **{level}**! (Proficiency +{prof})",
+        "\uD83C\uDF89 Level up logged: **{display}** \u2192 **L{level}** (Prof +{prof}).",
+        "\uD83C\uDF89 **{display}** advances to **L{level}**. Proficiency +{prof} noted."
+      ],
+      "levelDown": [
+        "\u2198\uFE0F **{display}** dropped to level **{level}**.",
+        "\u2198\uFE0F Adjustment recorded: **{display}** is now **L{level}**.",
+        "\u2198\uFE0F **{display}** reduced to **L{level}**."
+      ]
+    },
 
-  "reasonFmt": " _({reason})_"
+    "add": {
+      "ok": [
+        "OK. {mention}'s adventurer: {name}: **+{amt} XP** \u2192 {newXp} XP, level {oldLevel} \u2192 {newLevel}. {reasonLine}"
+      ]
+    },
+    "adjust": {
+      "ok": [
+        "OK. {mention}'s adventurer: {name}: **{sign}{absAmt} XP** \u2192 {newXp} XP, level {oldLevel} \u2192 {newLevel}. {reasonLine}"
+      ]
+    },
+    "set": {
+      "ok": [
+        "OK. {mention}'s adventurer: {name}: set to **{newXp} XP** \u2192 level **{newLevel}** (was L{oldLevel}). {reasonLine}"
+      ]
+    },
+
+    "reasonFmt": " _({reason})_"
   }
 }
-

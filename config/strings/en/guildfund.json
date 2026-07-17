@@ -1,18 +1,21 @@
 {
-    "guildfund": {
-        "errors": {
-            "notFound": [
-                "Guild fund not found.",
-                "No guild fund record available.",
-                "Unable to locate the guild fund."
-            ]
-        },
-        "title": ["Adventurer's Guild Fund", "Guild Fund Status", "Guild Treasury Overview"],
-        "footer": [
-            "GP is stored as copper pieces (1 GP = 100 CP).",
-            "Guild Fund details as recorded",
-            "Treasury information from the guild records"
-        ]
-
-    }
+  "guildfund": {
+    "errors": {
+      "notFound": [
+        "Guild fund not found.",
+        "No guild fund record available.",
+        "Unable to locate the guild fund."
+      ]
+    },
+    "title": [
+      "Adventurer's Guild Fund",
+      "Guild Fund Status",
+      "Guild Treasury Overview"
+    ],
+    "footer": [
+      "GP is stored as copper pieces (1 GP = 100 CP).",
+      "Guild Fund details as recorded",
+      "Treasury information from the guild records"
+    ]
+  }
 }

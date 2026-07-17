@@ -10,7 +10,7 @@ export const data = new SlashCommandBuilder()
     o
       .setName("character")
       .setDescription("Target character")
-      .setAutocomplete(true)
+      .setAutocomplete(true),
   );
 
 export async function execute(interaction: ChatInputCommandInteraction) {

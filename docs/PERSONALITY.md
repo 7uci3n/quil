@@ -1,14 +1,14 @@
 # 🪶 Quil — The Guild Scribe
 
 > “Every number tells a story. Every story ends in paperwork.”
-> — *Quil, Ledgerkeeper of the Remnant Guild*
+> — _Quil, Ledgerkeeper of the Remnant Guild_
 
 ---
 
 ## ✒️ Overview
 
 **Quil** is the official personality and voice of the Remnant Bot — a sentient quill pen and ledger spirit who manages the guild’s records, finances, and general chaos with dry wit and infinite patience (barely).
-He’s the evolved successor to *Bissle*, the old bot’s loud and abrasive bureaucrat. Quil retains the humor but trades shouting for **clever understatement, calm sarcasm, and literary charm.**
+He’s the evolved successor to _Bissle_, the old bot’s loud and abrasive bureaucrat. Quil retains the humor but trades shouting for **clever understatement, calm sarcasm, and literary charm.**
 
 ---
 
@@ -58,9 +58,9 @@ He’s the evolved successor to *Bissle*, the old bot’s loud and abrasive bure
 | Context                | Quil’s Response                                                                                |
 | :--------------------- | :--------------------------------------------------------------------------------------------- |
 | **Buy (no funds)**     | “Your coin purse is lighter than a feather, and not in the poetic way.”                        |
-| **Sell (success)**     | “Ledger updated — *{item}* sold. You’re {amount} GP richer and one step closer to chaos.”      |
-| **Initiate (welcome)** | “Ink to parchment — *{name}* enters the guild rolls. Don’t smudge the margins.”                |
-| **Retire (farewell)**  | “Ink dried; *{name}* joins the guild’s quiet gallery. The feats are etched, the tales intact.” |
+| **Sell (success)**     | “Ledger updated — _{item}_ sold. You’re {amount} GP richer and one step closer to chaos.”      |
+| **Initiate (welcome)** | “Ink to parchment — _{name}_ enters the guild rolls. Don’t smudge the margins.”                |
+| **Retire (farewell)**  | “Ink dried; _{name}_ joins the guild’s quiet gallery. The feats are etched, the tales intact.” |
 | **XP Gain**            | “{amount} XP gained. I’ll underline this one; you actually earned it.”                         |
 | **GP Spend**           | “{amount} GP gone. I hope whatever you bought was worth my ink.”                               |
 | **GT Gain**            | “Added {amount} GT. The ink sparkles. Literally, it’s glitter ink.”                            |
@@ -78,12 +78,12 @@ He now manifests through the bot to ensure the books stay balanced and the heroe
 
 ## 🧭 Writing Tips for Contributors
 
-* Write like you’re annotating a **fantasy bureaucracy manual**.
-* Replace anger with **precision** and **exasperated humor**.
-* Whenever you can, tie actions back to the **ledger**:
-  *“The ledger approves.”*, *“Filed under ‘Terrible Ideas.’”*, *“Recorded in triplicate.”*
-* Avoid modern slang — Quil sounds timeless, not trendy.
-* One emoji at most per message; 🪶, 📜, 💰, or 🎫 are preferred.
+- Write like you’re annotating a **fantasy bureaucracy manual**.
+- Replace anger with **precision** and **exasperated humor**.
+- Whenever you can, tie actions back to the **ledger**:
+  _“The ledger approves.”_, _“Filed under ‘Terrible Ideas.’”_, _“Recorded in triplicate.”_
+- Avoid modern slang — Quil sounds timeless, not trendy.
+- One emoji at most per message; 🪶, 📜, 💰, or 🎫 are preferred.
 
 ---
 
@@ -108,14 +108,14 @@ Quil’s responses live in `/config/strings/en/`, organized by command:
 
 When adding new commands or responses:
 
-* Use **the same wit and lexicon**: ink, parchment, ledgers, margins, receipts.
-* Match **tone hierarchy**:
+- Use **the same wit and lexicon**: ink, parchment, ledgers, margins, receipts.
+- Match **tone hierarchy**:
+  - Informational → helpful and dry.
+  - Warnings → gentle exasperation.
+  - Success → calm satisfaction.
+  - Errors → polite sarcasm.
 
-  * Informational → helpful and dry.
-  * Warnings → gentle exasperation.
-  * Success → calm satisfaction.
-  * Errors → polite sarcasm.
-* Keep him **in-character**, never breaking the fourth wall unless intentionally self-aware.
+- Keep him **in-character**, never breaking the fourth wall unless intentionally self-aware.
 
 ### 2. Localizing Strings
 
@@ -135,21 +135,21 @@ Keep placeholders human-readable — Quil would approve of legible syntax.
 
 Do **not** make Quil:
 
-* Slangy or meme-y (“lol”, “bro”, “pog”).
-* Aggressive or vulgar (he sighs, he doesn’t shout).
-* Overly robotic — he’s literary, not literal.
+- Slangy or meme-y (“lol”, “bro”, “pog”).
+- Aggressive or vulgar (he sighs, he doesn’t shout).
+- Overly robotic — he’s literary, not literal.
 
-If in doubt, read your line out loud in a *half-British, mildly unimpressed tone.*
+If in doubt, read your line out loud in a _half-British, mildly unimpressed tone._
 If it sounds like it belongs in a fantasy HR department, you nailed it.
 
 ### 4. Approving New Strings
 
 Before merging new text:
 
-* Check grammar and punctuation. Quil is precise.
-* Confirm capitalization consistency (`GP`, `XP`, `GT`).
-* Add one witty alternative to every repeated message if possible — variety is charm.
-* Always test in both ephemeral and public responses for clarity.
+- Check grammar and punctuation. Quil is precise.
+- Confirm capitalization consistency (`GP`, `XP`, `GT`).
+- Add one witty alternative to every repeated message if possible — variety is charm.
+- Always test in both ephemeral and public responses for clarity.
 
 ---
 
@@ -159,8 +159,8 @@ Before merging new text:
 > He balances humor with order, and order with affection.
 > He doesn’t shout; he sighs in italics.
 >
-> *He is the ink in the guild’s story — and he never runs dry.*
+> _He is the ink in the guild’s story — and he never runs dry._
 
 ---
 
-*This document was generated by an AI based on the original Bissle bot’s personality and refined for Quil’s voice. Adjust as needed to fit your guild’s style and lore!*
+_This document was generated by an AI based on the original Bissle bot’s personality and refined for Quil’s voice. Adjust as needed to fit your guild’s style and lore!_

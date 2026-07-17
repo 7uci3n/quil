@@ -1,53 +1,49 @@
 {
-"sell": {
-  "notInResourceChannel": [
-    "🖋 Wrong parchment. This belongs in the Resource channel.",
-    "🖋 Transactions are recorded in the Resource channel, not here.",
-    "🖋 Let’s keep the ledger tidy — use the Resource channel for this."
-  ],
-  "errors": {
-    "invalidItem": [
-      "Specify the item, please. My ledger doesn’t accept ‘vibes’.",
-      "If you can’t name it, you can’t sell it. Even I have standards.",
-      "You didn’t tell me what you’re selling. Try again with a name."
+  "sell": {
+    "notInResourceChannel": [
+      "🖋 Wrong parchment. This belongs in the Resource channel.",
+      "🖋 Transactions are recorded in the Resource channel, not here.",
+      "🖋 Let’s keep the ledger tidy — use the Resource channel for this."
     ],
-    "invalidAmount": [
-      "That’s not a valid amount. Positive numbers only.",
-      "I can’t transcribe imaginary or negative gold. Try again.",
-      "This ledger only accepts real, positive coin."
+    "errors": {
+      "invalidItem": [
+        "Specify the item, please. My ledger doesn’t accept ‘vibes’.",
+        "If you can’t name it, you can’t sell it. Even I have standards.",
+        "You didn’t tell me what you’re selling. Try again with a name."
+      ],
+      "invalidAmount": [
+        "That’s not a valid amount. Positive numbers only.",
+        "I can’t transcribe imaginary or negative gold. Try again.",
+        "This ledger only accepts real, positive coin."
+      ],
+      "invalidPrecision": [
+        "GP uses two decimal places. Please round neatly.",
+        "Too many decimals. My ink refuses to wobble that far.",
+        "Quil prefers cents, not dust. Two decimals, please."
+      ],
+      "noPlayerRecord": [
+        "Hi {user}, I can’t find your character log. Please `/initiate` first, then try again.",
+        "No ledger entry for you yet, {user}. Initiate your character to record sales.",
+        "I don’t see a record for {user}. Get initiated and we’ll ink the sale."
+      ]
+    },
+    "transactionSuccess": [
+      "Sale complete. **{item}** fetched **{amount} GP** |  Remaining GP: **{newGp}**.",
+      "Logged: **{item}** sold for **{amount} GP** | Current GP: **{newGp}**.",
+      "Ledger updated — **{item}** sold (**{amount} GP**) | Updated GP: **{newGp}**."
     ],
-    "invalidPrecision": [
-      "GP uses two decimal places. Please round neatly.",
-      "Too many decimals. My ink refuses to wobble that far.",
-      "Quil prefers cents, not dust. Two decimals, please."
-    ],
-    "noPlayerRecord": [
-      "Hi {user}, I can’t find your character log. Please `/initiate` first, then try again.",
-      "No ledger entry for you yet, {user}. Initiate your character to record sales.",
-      "I don’t see a record for {user}. Get initiated and we’ll ink the sale."
-    ]
-  },
-  "transactionSuccess": [
-    "Sale complete. **{item}** fetched **{amount} GP** |  Remaining GP: **{newGp}**.",
-    "Logged: **{item}** sold for **{amount} GP** | Current GP: **{newGp}**.",
-    "Ledger updated — **{item}** sold (**{amount} GP**) | Updated GP: **{newGp}**."
-  ],
-  "embed": {
-    "title": [
-      "📜 Sale Recorded",
-      "Ledger Entry — Sale",
-      "Quil’s Note — Sale"
-    ],
-    "description": [
-      "**{display}** sold **{item}** for **{amount} GP**.\n**New GP Total:** {newGp} GP",
-      "Recorded sale for **{display}**: **{item}** → **{amount} GP**.\nBalance: **{newGp} GP**",
-      "Filed: **{display}** sold **{item}** (**{amount} GP**).\nUpdated total: **{newGp} GP**"
-    ],
-    "footer": [
-      "Transacted by {tag}",
-      "Filed by {tag}",
-      "Entered by {tag}"
-    ]
+    "embed": {
+      "title": [
+        "📜 Sale Recorded",
+        "Ledger Entry — Sale",
+        "Quil’s Note — Sale"
+      ],
+      "description": [
+        "**{display}** sold **{item}** for **{amount} GP**.\n**New GP Total:** {newGp} GP",
+        "Recorded sale for **{display}**: **{item}** → **{amount} GP**.\nBalance: **{newGp} GP**",
+        "Filed: **{display}** sold **{item}** (**{amount} GP**).\nUpdated total: **{newGp} GP**"
+      ],
+      "footer": ["Transacted by {tag}", "Filed by {tag}", "Entered by {tag}"]
+    }
   }
-}
 }

@@ -1,94 +1,95 @@
 {
-"reward": {    
+  "reward": {
     "errors": {
-        "noPermission": [
+      "noPermission": [
         "🖋 You don't have permission to use this.",
         "🖋 Closed drawer. Access denied.",
         "🖋 That's a staff-only ledger stamp."
-        ],
-        "noRecipients": [
+      ],
+      "noRecipients": [
         "🖋 Add at least one user to reward.",
         "🖋 I need a name to write next to the numbers.",
         "🖋 No recipients provided. The ledger stays blank."
-        ],
-        "noInputs": [
+      ],
+      "noInputs": [
         "🖋 Provide XP, GP, or GT (or enable GT Auto).",
         "🖋 Nothing to award. Add values or turn on GT Auto.",
         "🖋 Empty reward. Ink refuses to flow for zeroes."
-        ],
-        "userNotInSystem": [
+      ],
+      "userNotInSystem": [
         "{username} is not in the system and has no recorded XP.",
         "No record for {username}. Try /initiate first.",
         "I can't find {username} in the ledger."
-        ],
-        "dmNoRecord": [
+      ],
+      "dmNoRecord": [
         "You have no recorded XP and cannot claim a DM reward.",
         "No character on file. /initiate to begin, then try again.",
         "The ledger has no entry for you yet."
-        ],
-        "staffNoRecipients": [
+      ],
+      "staffNoRecipients": [
         "🖋 Tag at least one staff member.",
         "🖋 I need at least one staffer to receive the stipend.",
         "🖋 No staff listed; nothing to file."
-        ]
+      ]
     },
 
     "common": {
-        "footerReason": "🗨️ Reason: {reason}",
-        "footerDash": ["—",
-    "🖋 Quil hopes there was a good reason for spilling all of this ink.",
-    "🖋 Quil reminds you to keep your receipts for tax purposes.",
-    "🖋 A small tip: store this information safely. Ink fades.",
-    "🖋 Quil's Ledger Reminder: Press hard to avoid smudging.",
-    "🖋 Quil suggests double-checking your entries for accuracy."
-        ]
+      "footerReason": "🗨️ Reason: {reason}",
+      "footerDash": [
+        "—",
+        "🖋 Quil hopes there was a good reason for spilling all of this ink.",
+        "🖋 Quil reminds you to keep your receipts for tax purposes.",
+        "🖋 A small tip: store this information safely. Ink fades.",
+        "🖋 Quil's Ledger Reminder: Press hard to avoid smudging.",
+        "🖋 Quil suggests double-checking your entries for accuracy."
+      ]
     },
     "announce": {
-        "levelUp": [
+      "levelUp": [
         "🎉 {mention} (**{display}**) reached level **{level}**! (Proficiency +{prof})",
         "🎉 {mention} (**{display}**) advances to **L{level}**. Proficiency +{prof} noted.",
         "🎉 Level up logged: {mention} (**{display}**) → **L{level}** (Prof +{prof})."
-        ],
-        "levelDown": [
+      ],
+      "levelDown": [
         "↘️ {mention} (**{display}**) dropped to level **{level}**.",
         "↘️ Adjustment recorded: {mention} (**{display}**) is now **L{level}**.",
         "↘️ {mention} (**{display}**) reduced to **L{level}**. Keep your chin—and your XP—up."
-        ]
+      ]
     },
     "custom": {
-        "contentApplied": [
+      "contentApplied": [
         "🖋 Rewards applied to: {mentions}",
         "🖋 Filed rewards for: {mentions}",
         "🖋 Entries updated for: {mentions}"
-        ],
-        "title": [
+      ],
+      "title": [
         "🖋 Rewards Applied",
         "🖋 Reward Ledger Update",
         "🖋 Distribution Recorded"
-        ],
-        "fieldHeading": "⚔️ {username}: {charName} ⚔️",
-        "fieldBody": [
+      ],
+      "fieldHeading": "⚔️ {username}: {charName} ⚔️",
+      "fieldBody": [
         "Before: {before}\nAfter:  {after}\nChange: {delta}",
         "Prior:  {before}\nResult: {after}\nDelta:  {delta}",
         "Was:    {before}\nNow:    {after}\nDiff:   {delta}"
-        ],
-        "fmt": {
+      ],
+      "fmt": {
         "delta": "+{xp} XP, +{gp} GP, +{gt} GT",
         "before": "XP {xp} · L{level} · GP {gp} · GT {gt}",
         "after": "XP {xp} · L{level} · GP {gp} · GT {gt}"
-        }
+      }
     },
     "dm": {
-        "title": [
+      "title": [
         "DM Reward for {name}",
         "Quil's Note — DM Stipend for {name}",
         "DM Ledger Entry for {name}"
-        ],
-        "description": [
+      ],
+      "description": [
         "{name} (L{level})\n+{xp} XP, +{gp} GP, +{gt} GT\n→ XP {nextXp} · L{nextLevel} · GP {nextGp} · GT {nextGt}",
         "{name} — L{level}\nAward: +{xp} XP, +{gp} GP, +{gt} GT\nTotals: XP {nextXp} · L{nextLevel} · GP {nextGp} · GT {nextGt}",
         "{name} (L{level})\nStipend: +{xp} XP, +{gp} GP, +{gt} GT\nNew: XP {nextXp} · L{nextLevel} · GP {nextGp} · GT {nextGt}"
-        ]
+      ]
     }
-}
+  }
 }

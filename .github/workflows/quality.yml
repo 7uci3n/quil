@@ -15,21 +15,19 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
 
-      # Lint is now clean and BLOCKING (src + tests). Format stays advisory until
-      # the pre-existing files are reformatted incrementally (pre-commit auto-fixes
-      # touched files). See docs/audit Phase 0.
+      # Lint + format are now clean and BLOCKING (repo-wide reformat done in
+      # audit D11). Type check covers src + tests (tsconfig.test.json).
       - name: Lint
         run: npm run lint
 
-      - name: Format check (advisory)
+      - name: Format check
         run: npx prettier --check .
-        continue-on-error: true
 
       - name: Type check
         run: npm run typecheck

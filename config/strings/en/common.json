@@ -39,32 +39,34 @@
       "🖋 {user} has no active character. They need to /initiate first.",
       "🖋 No active character found for {user}. Try /initiate."
     ]
-  },    
+  },
   "errors": {
-        "generic": ["Something went wrong. Please try again later.",
-                    "Well, this is embarrassing. Something broke on my end.",
-                    "I'm having a bit of a malfunction. Please try again later.",
-                    "Oops! It seems I've encountered an error. Please try again later."],
-        "invalid": {
-            "random": [
-                "Speak up, kiddo! I didn't understand a word you said.",
-                "That didn't make a lick of sense.",
-                "Sorry, I don't speak abyssal.",
-                "Perhaps you should try again after the **Feeblemind** has worn off."
-            ]
-        },
-        "notYetImplemented": [
-            "This feature is still in the forge. Stay tuned!",
-            "I'm still learning that trick. Check back later!",
-            "Coming soon to a guild near you!",
-            "This feature is still being crafted. Please be patient!",
-            "I'm still learning that trick. Please check back later!"
-        ],
-        "permission": {
-            "guild_member_only": "You can only use this if you are a registered Guild Member."
-        },
-        "channel": {
-            "use_specific": "Please use this in {channel}."
-        } 
-        }
+    "generic": [
+      "Something went wrong. Please try again later.",
+      "Well, this is embarrassing. Something broke on my end.",
+      "I'm having a bit of a malfunction. Please try again later.",
+      "Oops! It seems I've encountered an error. Please try again later."
+    ],
+    "invalid": {
+      "random": [
+        "Speak up, kiddo! I didn't understand a word you said.",
+        "That didn't make a lick of sense.",
+        "Sorry, I don't speak abyssal.",
+        "Perhaps you should try again after the **Feeblemind** has worn off."
+      ]
+    },
+    "notYetImplemented": [
+      "This feature is still in the forge. Stay tuned!",
+      "I'm still learning that trick. Check back later!",
+      "Coming soon to a guild near you!",
+      "This feature is still being crafted. Please be patient!",
+      "I'm still learning that trick. Please check back later!"
+    ],
+    "permission": {
+      "guild_member_only": "You can only use this if you are a registered Guild Member."
+    },
+    "channel": {
+      "use_specific": "Please use this in {channel}."
+    }
+  }
 }

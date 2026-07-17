@@ -99,6 +99,7 @@ Maintainer contact
 - Author: see git history for `src/commands/sell.ts`.
 
 ---
+
 [Home](README.md) / [Commands](README.md) / [sell](sell.md)
 
 This document was generated from the implementation at `src/commands/sell.ts`. Keep it updated if the code changes.
