@@ -3,18 +3,22 @@ import { parse } from "csv-parse/sync";
 import type { SheetStory } from "../commands/library.js";
 import { CONFIG } from "../config/resolved.js";
 
-type RawStory = {
-  title: string | undefined;
-  genre: string | undefined;
-  content: string | undefined;
-};
-
-function isValidStory(story: RawStory): story is SheetStory {
-  return (
-    typeof story.title === "string" &&
-    typeof story.genre === "string" &&
-    typeof story.content === "string"
-  );
+/**
+ * Pure CSV-row → story mapping. Columns: title, genre, content, [author].
+ * Rows missing any required field (title/genre/content) are dropped; a blank
+ * author column is omitted rather than stored as "".
+ */
+export function rowsToStories(records: string[][]): SheetStory[] {
+  const stories: SheetStory[] = [];
+  for (const row of records) {
+    const title = row[0]?.trim();
+    const genre = row[1]?.trim();
+    const content = row[2]?.trim();
+    if (!title || !genre || !content) continue;
+    const author = row[3]?.trim() || undefined;
+    stories.push({ title, genre, content, ...(author ? { author } : {}) });
+  }
+  return stories;
 }
 
 export async function fetchStoriesFromGoogleSheet(): Promise<SheetStory[]> {
@@ -37,12 +41,5 @@ export async function fetchStoriesFromGoogleSheet(): Promise<SheetStory[]> {
     trim: true,
   }) as string[][];
 
-  return records
-    .filter((row) => row.length >= 3)
-    .map((row) => ({
-      title: row[0]?.trim(),
-      genre: row[1]?.trim(),
-      content: row[2]?.trim(),
-    }))
-    .filter(isValidStory);
+  return rowsToStories(records);
 }

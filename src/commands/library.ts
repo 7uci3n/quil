@@ -15,6 +15,41 @@ export interface SheetStory {
   title: string;
   genre: string;
   content: string;
+  author?: string;
+}
+
+/** Footer line: page position, genre, and author (when the sheet supplies one). */
+export function buildFooterText(
+  story: SheetStory,
+  pageIndex: number,
+  pageCount: number,
+): string {
+  const base = `Page ${pageIndex + 1} / ${pageCount} • Genre: ${story.genre}`;
+  return story.author ? `${base} • By ${story.author}` : base;
+}
+
+export type LibraryAction = "toggle-lock" | "deny-lock" | "turn" | "deny-turn";
+
+/** Decide what a button press means given who pressed it and the lock state. */
+export function resolveLibraryAction(
+  customId: string,
+  isOwner: boolean,
+  locked: boolean,
+): LibraryAction {
+  if (customId === "lock") return isOwner ? "toggle-lock" : "deny-lock";
+  if (locked && !isOwner) return "deny-turn";
+  return "turn";
+}
+
+/** Clamp the next page index for prev/next; unknown ids leave it unchanged. */
+export function nextPageIndex(
+  customId: string,
+  current: number,
+  pageCount: number,
+): number {
+  if (customId === "prev") return Math.max(0, current - 1);
+  if (customId === "next") return Math.min(pageCount - 1, current + 1);
+  return current;
 }
 
 export const data = new SlashCommandBuilder()
@@ -82,63 +117,74 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   }
 
   const pages = chunkString(story.content, 3500);
+  const ownerId = interaction.user.id;
   let pageIndex = 0;
+  let locked = false;
 
   const buildEmbed = () =>
     new EmbedBuilder()
       .setTitle(story.title)
       .setDescription(pages[pageIndex] ?? null)
-      .setFooter({
-        text: `Page ${pageIndex + 1} / ${pages.length} • Genre: ${story.genre}`,
-      })
+      .setFooter({ text: buildFooterText(story, pageIndex, pages.length) })
       .setColor(0x5865f2);
 
-  const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder()
-      .setCustomId("prev")
-      .setLabel("◀")
-      .setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder()
-      .setCustomId("next")
-      .setLabel("▶")
-      .setStyle(ButtonStyle.Secondary),
-  );
+  const button = (id: string, label: string, style: ButtonStyle) =>
+    new ButtonBuilder().setCustomId(id).setLabel(label).setStyle(style);
+
+  const buildRow = () =>
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      button("prev", "◀", ButtonStyle.Secondary),
+      button("next", "▶", ButtonStyle.Secondary),
+      button(
+        "lock",
+        locked ? "🔓" : "🔒",
+        locked ? ButtonStyle.Danger : ButtonStyle.Secondary,
+      ),
+    );
 
   const response = await interaction.reply({
     embeds: [buildEmbed()],
-    components: pages.length > 1 ? [row] : [],
+    components: pages.length > 1 ? [buildRow()] : [],
     withResponse: true,
   });
 
   const message = response.resource?.message;
-
   if (pages.length <= 1) return;
 
+  const owner = `<@${ownerId}>`;
   const collector = message?.createMessageComponentCollector({
     time: 5 * 60_000,
   });
 
   collector?.on("collect", async (i) => {
-    if (i.user.id !== interaction.user.id) {
+    const action = resolveLibraryAction(
+      i.customId,
+      i.user.id === ownerId,
+      locked,
+    );
+    if (action === "deny-lock") {
       await i.reply({
-        content: t("library.notYours"),
+        content: t("library.lock.denyLock", { owner }),
         flags: MessageFlags.Ephemeral,
       });
       return;
     }
-
-    if (i.customId === "prev") {
-      pageIndex = Math.max(0, pageIndex - 1);
-    } else if (i.customId === "next") {
-      pageIndex = Math.min(pages.length - 1, pageIndex + 1);
+    if (action === "deny-turn") {
+      await i.reply({
+        content: t("library.lock.denyTurn", { owner }),
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
     }
-
-    await i.update({ embeds: [buildEmbed()] });
+    if (action === "toggle-lock") locked = !locked;
+    else pageIndex = nextPageIndex(i.customId, pageIndex, pages.length);
+    await i.update({ embeds: [buildEmbed()], components: [buildRow()] });
   });
 
   // Disable the buttons once the collector times out so they don't sit live.
   collector?.on("end", async () => {
-    row.components.forEach((b) => b.setDisabled(true));
-    await message?.edit({ components: [row] }).catch(() => {});
+    const dead = buildRow();
+    dead.components.forEach((b) => b.setDisabled(true));
+    await message?.edit({ components: [dead] }).catch(() => {});
   });
 }

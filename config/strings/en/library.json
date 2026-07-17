@@ -7,6 +7,16 @@
     "notYours": [
       "🖋 That's not your story to turn.",
       "🖋 Hands off — someone else is reading that one."
-    ]
+    ],
+    "lock": {
+      "denyLock": [
+        "🖋 Only {owner} can lock or unlock this book.",
+        "🖋 That clasp answers to {owner}, not you."
+      ],
+      "denyTurn": [
+        "🖋 This book is locked by {owner}. Only they may turn the pages.",
+        "🖋 {owner} has the book held open. Wait your turn."
+      ]
+    }
   }
 }

@@ -24,12 +24,13 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   const db = getDb();
   const insert = db.prepare(
-    `INSERT INTO library (title, genre, content) VALUES (?, ?, ?)`,
+    `INSERT INTO library (title, genre, content, author) VALUES (?, ?, ?, ?)`,
   );
   // Clear and replace atomically (auto-rollback on any failed insert).
   const replaceAll = db.transaction((items: typeof rows) => {
     db.prepare("DELETE FROM library").run();
-    for (const row of items) insert.run(row.title, row.genre, row.content);
+    for (const row of items)
+      insert.run(row.title, row.genre, row.content, row.author ?? null);
   });
   replaceAll(rows);
 

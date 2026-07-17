@@ -116,6 +116,9 @@ export async function migrateDb(dbFile = DEFAULT_DB): Promise<Sqlite> {
       );
     `);
   }
+  if (!hasColumn("library", "author")) {
+    db.exec(`ALTER TABLE library ADD COLUMN author TEXT;`);
+  }
   if (!hasColumn("charlog", "cc")) {
     db.exec(`ALTER TABLE charlog ADD COLUMN cc INTEGER NOT NULL DEFAULT 0;`);
   }
