@@ -1,0 +1,38 @@
+# Build context excludes — keep the image small and never ship secrets/state.
+
+# Secrets & local state
+.env
+.env.*
+!.env.example
+data
+backups
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*
+
+# Rebuilt inside the image
+node_modules
+dist
+dist_backup
+coverage
+
+# VCS / CI / tooling not needed at build time
+.git
+.gitignore
+.github
+.husky
+.claude
+.kimi
+.agents
+.mcp.json
+.coderabbit.yaml
+
+# Tests & project meta (prod image doesn't need them)
+tests
+_project_specs
+docs
+*.md
+!README.md
+check-permissions.sh
+ops

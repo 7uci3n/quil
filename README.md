@@ -49,6 +49,49 @@ If successful, the console should log a ready message for the bot (e.g. "Ready! 
 
 ---
 
+## 🐳 Run with Docker (recommended for operators)
+
+No Node install, no build step. You need only Docker + the Docker Compose plugin.
+
+```bash
+# 1. Get the compose file and env template (or clone the repo)
+curl -O https://raw.githubusercontent.com/remnantwestmarches/quil/main/docker-compose.yml
+curl -o .env https://raw.githubusercontent.com/remnantwestmarches/quil/main/.env.example
+
+# 2. Edit .env — set DISCORD_TOKEN, APP_ID, GUILD_ID
+nano .env
+
+# 3. Start the bot (pulls the prebuilt image from ghcr.io)
+docker compose up -d
+
+# 4. First run only (and whenever commands change): register slash commands
+docker compose run --rm register
+
+# Logs / stop / update
+docker compose logs -f
+docker compose down                 # stop (keeps the database)
+docker compose pull && docker compose up -d   # update to the latest image
+```
+
+Operators pull the production image from **`ghcr.io/remnantwestmarches/quil`**
+(public, multi-arch amd64/arm64) — the compose file uses it by default. (Developers
+can point at a dev build with `QUIL_IMAGE=ghcr.io/7uci3n/quil` in `.env`, or build
+locally via `build: .`.) Your character database lives in **`./data`** on the host
+(bind mount) and survives `docker compose down` — back it up by copying that folder.
+Create it writable by the container first: `mkdir -p data backups && sudo chown -R 1000:1000 data backups`.
+
+**Already running the bare-node bot?** See
+[docs/MIGRATION-docker.md](./docs/MIGRATION-docker.md) to move your existing
+database across without data loss.
+
+**Build from source instead** (devs / self-hosters): uncomment `build: .` in
+`docker-compose.yml`, then `docker compose up -d --build`.
+
+See [ADR-0002](./docs/adr/0002-containerization.md) for the design and the
+(deferred) auto-deploy options.
+
+---
+
 ## 🎯 Features
 
 - **Character Management**: Track XP, levels, CP (Copper Pieces), GP (Gold Pieces), GT (Guild Tokens), DTP (Downtime Points), and CC (Crew Coins)

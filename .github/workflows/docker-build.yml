@@ -1,0 +1,38 @@
+name: Docker build check
+
+# Verifies the image builds on every PR / push — WITHOUT publishing.
+# Publishing happens only in release.yml (on tags/releases), to whichever repo
+# it runs in (dev fork = test image; remnantwestmarches = production image).
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # amd64 only here (native, fast) — the multi-arch build lives in release.yml.
+      - name: Build image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: false
+          load: true
+          tags: quil:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke-test entrypoint (init + migrate on a scratch DB)
+        run: |
+          mkdir -p /tmp/quildata && chmod 777 /tmp/quildata
+          docker run --rm -v /tmp/quildata:/app/data quil:ci echo "entrypoint OK"
+          test -f /tmp/quildata/remnant.sqlite && echo "✓ DB created by entrypoint"

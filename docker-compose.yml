@@ -1,0 +1,47 @@
+# Quil — one-command deploy for operators.
+#
+#   1. Download this file + .env.example  (or clone the repo)
+#   2. cp .env.example .env   and fill in DISCORD_TOKEN / APP_ID / GUILD_ID
+#   3. docker compose up -d
+#
+# First run only (and whenever commands change), register the slash commands:
+#   docker compose run --rm register
+#
+# Image source: defaults to the production image ghcr.io/remnantwestmarches/quil.
+# Override for testing a dev build (in .env or the shell):
+#   QUIL_IMAGE=ghcr.io/7uci3n/quil   QUIL_TAG=latest
+# ...or uncomment `build: .` below to build locally from source.
+#
+# The database lives in ./data on the host (bind mount) and survives everything —
+# `docker compose down` never touches it. Back it up by copying ./data.
+# Migrating from a bare-node install? See docs/MIGRATION-docker.md.
+
+services:
+  quil:
+    image: ${QUIL_IMAGE:-ghcr.io/remnantwestmarches/quil}:${QUIL_TAG:-latest}
+    # Devs / self-hosters can build from source instead of pulling — uncomment:
+    # build: .
+    container_name: quil
+    env_file: .env
+    environment:
+      NODE_ENV: production
+    volumes:
+      # Bind mounts: the DB and backups are real files on the host next to this
+      # compose file — easy to migrate in, snapshot, and back up. The ./data folder
+      # must be writable by uid 1000 (the container's non-root `node` user):
+      #   mkdir -p data backups && sudo chown -R 1000:1000 data backups
+      - ./data:/app/data
+      - ./backups:/app/backups
+    restart: unless-stopped
+    stop_grace_period: 15s # give the SIGTERM handler time to close SQLite cleanly
+
+  # One-shot helper to (re)register slash commands with Discord.
+  # Not started by `docker compose up` (tools profile); run on demand:
+  #   docker compose run --rm register
+  register:
+    image: ${QUIL_IMAGE:-ghcr.io/remnantwestmarches/quil}:${QUIL_TAG:-latest}
+    # build: .
+    profiles: ["tools"]
+    env_file: .env
+    entrypoint: [] # skip init/migrate; just register
+    command: ["node", "dist/src/scripts/register-commands.js", "--prod"]
