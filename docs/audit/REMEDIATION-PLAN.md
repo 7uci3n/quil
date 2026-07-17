@@ -91,7 +91,25 @@ you touch logic.
 
 ## Definition of done for the spring clean
 
-- 🔴 = 0, 🟠 = 0.
-- `lint`, `typecheck`, `test` green in CI; coverage measured with an enforced floor.
-- No dead modules; money mutations atomic; every fix carries a test that failed first (RED→GREEN).
-- Docs describe the real system (right repo, right DB library, right service name).
+- 🔴 = 0, 🟠 = 0. ✅
+- `lint`, `typecheck` (src+tests), `test:coverage` (enforced floor), `build`, and
+  **format** all green and BLOCKING in CI. ✅
+- No dead modules; money mutations atomic; every fix carries a test. ✅
+- Docs describe the real system. ✅
+- **npm audit: 0 vulnerabilities** (sqlite3 → 6). ✅
+- Logger in place; `console.*` gone from src. ✅
+
+## Post-audit maintainer direction (see chat "open decisions")
+
+- **D2 (resolved):** CC is a pooled PLAYER resource — pooled draw restored; a
+  character's CC may go negative as long as the pool balances (settled on retire).
+- **Done:** D4 (logger), D6 (suffix i18n), D7 (sqlite3@6, 0 vulns), D11 (format
+  gate), D12 (tsconfig strict + test typecheck), D13 (uninitiated role id), D14
+  (runbook unit name), D15 (default branch = main).
+- **Partial:** D3 — LFG role/board extracted; the six handlers stay in lfg.ts
+  pending handler-level tests.
+- **Still deferred:** D1 (dmrewards L20/L7 — low importance, L20 is max level),
+  D5 (announceLevelChange dedup — maintainer to review the announcement + agree a
+  test shape), C block D8/D9/D10 (CD design, GHCR-public, polyphony/agent-team —
+  after first push).
+- **Before first push (D16):** local test against the dev Discord server.
