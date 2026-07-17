@@ -11,6 +11,9 @@ RUN apt-get update \
 
 COPY package.json package-lock.json ./
 RUN npm ci
+# sqlite3@6 ships prebuilt binaries that may target a newer glibc than the slim
+# runtime — rebuild from source so it links against this image's glibc.
+RUN npm rebuild sqlite3 --build-from-source
 
 COPY tsconfig.json ./
 COPY src ./src
