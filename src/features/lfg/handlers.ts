@@ -1,4 +1,5 @@
 // LFG subcommand handlers (extracted from commands/lfg.ts — ADR-0003 / ARCH-4).
+// Mutations are atomic + roles reconciled from the authoritative entry (ADR-0005).
 import {
   ChatInputCommandInteraction,
   EmbedBuilder,
@@ -7,14 +8,13 @@ import {
   MessageFlags,
 } from "discord.js";
 import { CONFIG } from "../../config/resolved.js";
-import { hasAnyRole, isAdmin } from "../../config/validaters.js";
+import { hasAnyRole, isAdmin } from "../../config/validators.js";
 import { getDb } from "../../db/index.js";
 import {
   getLfgEntry,
-  upsertLfgEntry,
-  deleteLfgEntry,
   listAllLfg,
   purgeLfgBefore,
+  applyLfgMutation,
 } from "../../db/lfg.js";
 import {
   buildLfgEmbed,
@@ -26,12 +26,7 @@ import {
   type LfgTier,
   ORDER as LFG_ORDER,
 } from "../../domain/lfg.js";
-import {
-  LFG_BASE_ROLE_ID,
-  LFG_TIER_ROLE_IDS,
-  removeRoleById,
-  syncRolesFor,
-} from "./roles.js";
+import { syncRolesFor } from "./roles.js";
 import { refreshBoard } from "./board.js";
 import { levelForXP } from "../../domain/xp.js";
 import { t } from "../../lib/i18n.js";
@@ -43,13 +38,13 @@ const CFG = CONFIG.guild!.config;
 const ROLES = CFG.roles;
 
 const PERMS = {
-  // who can toggle/add/remove for themselves: everyone (we’ll only gate purge & post)
+  // toggle/add/remove are self-service (everyone); only purge & post are gated.
   postBoard: [ROLES.moderator.id, ROLES.admin.id],
   purge: [ROLES.moderator.id, ROLES.admin.id],
 };
 
 /* ──────────────────────────────────────────────────────────────────────────────
-  DB HELPERS (charlog read)
+  HELPERS
 ────────────────────────────────────────────────────────────────────────────── */
 async function getCharlogXPName(
   userId: string,
@@ -60,9 +55,6 @@ async function getCharlogXPName(
   return row ?? null;
 }
 
-/* ──────────────────────────────────────────────────────────────────────────────
-  UTILS
-────────────────────────────────────────────────────────────────────────────── */
 type TierChoice = "auto" | LfgTier | "all";
 
 function parseTier(choice?: string | null): TierChoice | null {
@@ -72,22 +64,13 @@ function parseTier(choice?: string | null): TierChoice | null {
   if (["low", "mid", "high", "epic", "pbp"].includes(v)) return v as LfgTier;
   return null;
 }
-/* ──────────────────────────────────────────────────────────────────────────────
-  HANDLERS
-────────────────────────────────────────────────────────────────────────────── */
-async function ensureEntry(ix: ChatInputCommandInteraction): Promise<LfgEntry> {
-  const guildId = ix.guild!.id;
-  const userId = ix.user.id;
-  const fallbackName = userMention(userId);
+
+function defaultEntry(userId: string, guildId: string): LfgEntry {
   const now = Date.now();
-
-  const existing = await getLfgEntry(userId);
-  if (existing) return existing;
-
   return {
     userId,
     guildId,
-    name: fallbackName,
+    name: userMention(userId),
     startedAt: now,
     low: 0,
     mid: 0,
@@ -103,7 +86,6 @@ async function resolveAutoTier(
 ): Promise<Exclude<LfgTier, "pbp"> | null> {
   const row = await getCharlogXPName(userId);
   if (!row) return null;
-  // We could use autoTierForLevelFromXP(row.xp), but that expects XP; do it here for clarity:
   const level = levelForXP(row.xp);
   if (level < 5) return "low";
   if (level < 11) return "mid";
@@ -111,96 +93,111 @@ async function resolveAutoTier(
   return "epic";
 }
 
+/** Resolve a tier choice to a concrete tier, or an i18n error key for auto/all. */
+async function resolveConcreteTier(
+  ix: ChatInputCommandInteraction,
+  choice: Exclude<TierChoice, null>,
+): Promise<{ tier: LfgTier } | { errorKey: string }> {
+  if (choice === "auto") {
+    const auto = await resolveAutoTier(ix.user.id);
+    return auto
+      ? { tier: auto }
+      : { errorKey: "lfg.errors.couldNotDetermineLevel" };
+  }
+  if (choice === "all") return { errorKey: "lfg.errors.useRemoveAllHint" };
+  return { tier: choice };
+}
+
+function activeTierList(entry: LfgEntry): string {
+  const active = LFG_ORDER.filter((tier) => entry[tier])
+    .map((tier) => `\`${tier}\``)
+    .join(", ");
+  return active || t("lfg.toggle.noneList");
+}
+
+/* ──────────────────────────────────────────────────────────────────────────────
+  HANDLERS
+────────────────────────────────────────────────────────────────────────────── */
 export async function handleToggle(ix: ChatInputCommandInteraction) {
-  const tierChoice = parseTier(ix.options.getString("tier"));
-  if (!tierChoice)
+  const choice = parseTier(ix.options.getString("tier"));
+  if (!choice)
     return ix.reply({
       flags: MessageFlags.Ephemeral,
       content: t("lfg.errors.unknownTier"),
     });
 
-  let entry = await ensureEntry(ix);
-  const member = await ix.guild!.members.fetch(ix.user.id);
-  // Build active list:
-  const active = LFG_ORDER.filter((t) => entry[t as LfgTier])
-    .map((t) => `\`${t}\``)
-    .join(", ");
-  const activeList = active || t("lfg.toggle.noneList");
-
-  // Determine target tier
-  let tier: LfgTier;
-  if (tierChoice === "auto") {
-    const auto = await resolveAutoTier(ix.user.id);
-    if (!auto) {
-      return ix.reply({
-        flags: MessageFlags.Ephemeral,
-        content: t("lfg.errors.couldNotDetermineLevel"),
-      });
-    }
-    tier = auto;
-  } else if (tierChoice === "all") {
+  const resolved = await resolveConcreteTier(ix, choice);
+  if ("errorKey" in resolved)
     return ix.reply({
       flags: MessageFlags.Ephemeral,
-      content: t("lfg.errors.useRemoveAllHint"),
+      content: t(resolved.errorKey),
     });
-  } else {
-    tier = tierChoice as LfgTier;
-  }
+  const tier = resolved.tier;
 
-  // Toggle that tier
-  const currentlyOn = !!entry[tier];
-  entry = setTier(entry, tier, !currentlyOn, Date.now());
-  await upsertLfgEntry(entry);
+  const userId = ix.user.id;
+  const guildId = ix.guild!.id;
+  let wasOn = false;
+  const entry = await applyLfgMutation(
+    userId,
+    guildId,
+    () => defaultEntry(userId, guildId),
+    (e) => {
+      wasOn = !!e[tier];
+      return setTier(e, tier, !wasOn, Date.now());
+    },
+  );
+
+  const member = await ix.guild!.members.fetch(userId);
   await syncRolesFor(member, entry);
   await refreshBoard(ix);
 
   return ix.reply({
-    content: t(currentlyOn ? "lfg.toggle.removed" : "lfg.toggle.added", {
+    content: t(wasOn ? "lfg.toggle.removed" : "lfg.toggle.added", {
       tierUpper: tier.toUpperCase(),
-      activeList,
+      activeList: activeTierList(entry),
     }),
   });
 }
 
 export async function handleAdd(ix: ChatInputCommandInteraction) {
-  const tierChoice = parseTier(ix.options.getString("tier"));
-  if (!tierChoice)
+  const choice = parseTier(ix.options.getString("tier"));
+  if (!choice)
     return ix.reply({
       flags: MessageFlags.Ephemeral,
       content: t("lfg.errors.unknownTier"),
     });
 
-  let entry = await ensureEntry(ix);
-  const member = await ix.guild!.members.fetch(ix.user.id);
-
-  let tier: LfgTier;
-  if (tierChoice === "auto") {
-    const auto = await resolveAutoTier(ix.user.id);
-    if (!auto) {
-      return ix.reply({
-        flags: MessageFlags.Ephemeral,
-        content: t("lfg.errors.couldNotDetermineLevel"),
-      });
-    }
-    tier = auto;
-  } else if (tierChoice === "all") {
+  const resolved = await resolveConcreteTier(ix, choice);
+  if ("errorKey" in resolved)
     return ix.reply({
       flags: MessageFlags.Ephemeral,
-      content: t("lfg.errors.useRemoveAllHint"),
+      content: t(resolved.errorKey),
     });
-  } else {
-    tier = tierChoice as LfgTier;
-  }
+  const tier = resolved.tier;
 
-  if (entry[tier]) {
+  const userId = ix.user.id;
+  const guildId = ix.guild!.id;
+  let already = false;
+  const entry = await applyLfgMutation(
+    userId,
+    guildId,
+    () => defaultEntry(userId, guildId),
+    (e) => {
+      if (e[tier]) {
+        already = true;
+        return e;
+      }
+      return setTier(e, tier, true, Date.now());
+    },
+  );
+
+  if (already)
     return ix.reply({
       flags: MessageFlags.Ephemeral,
       content: t("lfg.errors.alreadyInTier", { tier }),
     });
-  }
 
-  entry = setTier(entry, tier, true, Date.now());
-  await upsertLfgEntry(entry);
+  const member = await ix.guild!.members.fetch(userId);
   await syncRolesFor(member, entry);
   await refreshBoard(ix);
 
@@ -210,49 +207,50 @@ export async function handleAdd(ix: ChatInputCommandInteraction) {
 }
 
 export async function handleRemove(ix: ChatInputCommandInteraction) {
-  const tierChoice = parseTier(ix.options.getString("tier"));
-  if (!tierChoice)
+  const choice = parseTier(ix.options.getString("tier"));
+  if (!choice)
     return ix.reply({
       flags: MessageFlags.Ephemeral,
       content: t("lfg.errors.unknownTier"),
     });
 
-  let entry = await getLfgEntry(ix.user.id);
-  if (!entry)
+  const userId = ix.user.id;
+  const guildId = ix.guild!.id;
+  const existing = await getLfgEntry(userId, guildId);
+  if (!existing)
     return ix.reply({
       flags: MessageFlags.Ephemeral,
       content: t("lfg.errors.notOnBoard"),
     });
 
-  const member = await ix.guild!.members.fetch(ix.user.id);
-
-  if (tierChoice === "all") {
-    entry = clearAll(entry, Date.now());
-    await upsertLfgEntry(entry);
-    // Remove tier roles but keep base LFG role
-    await removeRoleById(member, LFG_TIER_ROLE_IDS.low);
-    await removeRoleById(member, LFG_TIER_ROLE_IDS.mid);
-    await removeRoleById(member, LFG_TIER_ROLE_IDS.high);
-    await removeRoleById(member, LFG_TIER_ROLE_IDS.epic);
-    await removeRoleById(member, LFG_TIER_ROLE_IDS.pbp);
-    // if truly nothing left, remove entry entirely
-    if (!anyTierOn(entry)) await deleteLfgEntry(ix.user.id);
+  if (choice === "all") {
+    const entry = await applyLfgMutation(
+      userId,
+      guildId,
+      () => defaultEntry(userId, guildId),
+      (e) => clearAll(e, Date.now()),
+    );
+    const member = await ix.guild!.members.fetch(userId);
+    await syncRolesFor(member, entry);
     await refreshBoard(ix);
     return ix.reply({ content: t("lfg.remove.allSuccess") });
   }
 
-  const tier = tierChoice as LfgTier;
-  if (!entry[tier]) {
+  const tier = choice as LfgTier;
+  if (!existing[tier])
     return ix.reply({
       flags: MessageFlags.Ephemeral,
       content: t("lfg.errors.notInTier", { tier }),
     });
-  }
 
-  entry = setTier(entry, tier, false, Date.now());
-  await upsertLfgEntry(entry);
+  const entry = await applyLfgMutation(
+    userId,
+    guildId,
+    () => defaultEntry(userId, guildId),
+    (e) => setTier(e, tier, false, Date.now()),
+  );
+  const member = await ix.guild!.members.fetch(userId);
   await syncRolesFor(member, entry);
-  if (!anyTierOn(entry)) await deleteLfgEntry(ix.user.id);
   await refreshBoard(ix);
 
   return ix.reply({
@@ -261,7 +259,7 @@ export async function handleRemove(ix: ChatInputCommandInteraction) {
 }
 
 export async function handleStatus(ix: ChatInputCommandInteraction) {
-  const entry = await getLfgEntry(ix.user.id);
+  const entry = await getLfgEntry(ix.user.id, ix.guild!.id);
   if (!entry || !anyTierOn(entry)) {
     return ix.reply({
       flags: MessageFlags.Ephemeral,
@@ -272,13 +270,13 @@ export async function handleStatus(ix: ChatInputCommandInteraction) {
     0,
     Math.floor((Date.now() - entry.startedAt) / (24 * 60 * 60 * 1000)),
   );
-  const tiers = LFG_ORDER.filter((t) => !!entry[t as keyof LfgEntry]);
+  const tiers = LFG_ORDER.filter((tier) => !!entry[tier]);
   const embed = new EmbedBuilder()
     .setTitle(t("lfg.status.title"))
     .addFields(
       {
         name: t("lfg.status.fields.tiers"),
-        value: tiers.map((t) => `\`${t}\``).join(", ") || "—",
+        value: tiers.map((tier) => `\`${tier}\``).join(", ") || "—",
         inline: true,
       },
       {
@@ -335,45 +333,29 @@ export async function handlePurge(ix: ChatInputCommandInteraction) {
     });
   }
 
-  const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
-  const removedIds = await purgeLfgBefore(ix.guild!.id, cutoff, scope);
+  // The per-user member fetch loop can exceed Discord's 3s window — defer first.
+  await ix.deferReply();
 
-  // Try to remove roles for those users (best effort)
-  for (const uid of removedIds) {
-    try {
-      const m = await ix.guild!.members.fetch(uid);
-      if (scope === "pbp") {
-        // Only remove PBP tier role
-        await removeRoleById(m, LFG_TIER_ROLE_IDS.pbp);
-      } else {
-        // Remove low, mid, high, epic (but NOT pbp)
-        await removeRoleById(m, LFG_TIER_ROLE_IDS.low);
-        await removeRoleById(m, LFG_TIER_ROLE_IDS.mid);
-        await removeRoleById(m, LFG_TIER_ROLE_IDS.high);
-        await removeRoleById(m, LFG_TIER_ROLE_IDS.epic);
-      }
-      // Check if user still has any tier roles, remove base LFG if none
-      const stillHasTier = LFG_ORDER.some((t) => {
-        const rid = LFG_TIER_ROLE_IDS[t];
-        return rid && m.roles.cache.has(rid);
-      });
-      if (!stillHasTier) {
-        await removeRoleById(m, LFG_BASE_ROLE_ID);
-      }
-    } catch {
-      // ignore
-    }
+  const guildId = ix.guild!.id;
+  const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+  const results = await purgeLfgBefore(guildId, cutoff, scope);
+
+  // Reconcile roles from the authoritative post-purge entry (null = removed).
+  for (const { userId, entry } of results) {
+    const m = await ix.guild!.members.fetch(userId).catch(() => null);
+    if (!m) continue;
+    await syncRolesFor(m, entry ?? defaultEntry(userId, guildId));
   }
 
   await refreshBoard(ix, "purge");
-  await ix.reply({
-    content: removedIds.length
+  return ix.editReply({
+    content: results.length
       ? t("lfg.purge.resultSome", {
-          count: removedIds.length,
+          count: results.length,
           days,
           scope,
           suffix: t(
-            removedIds.length === 1
+            results.length === 1
               ? "lfg.purge.suffixOne"
               : "lfg.purge.suffixMany",
           ),
