@@ -135,4 +135,10 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     await i.update({ embeds: [buildEmbed()] });
   });
+
+  // Disable the buttons once the collector times out so they don't sit live.
+  collector?.on("end", async () => {
+    row.components.forEach((b) => b.setDisabled(true));
+    await message?.edit({ components: [row] }).catch(() => {});
+  });
 }

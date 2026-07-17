@@ -1,6 +1,7 @@
 import axios from "axios";
 import { parse } from "csv-parse/sync";
 import type { SheetStory } from "../commands/library.js";
+import { CONFIG } from "../config/resolved.js";
 
 type RawStory = {
   title: string | undefined;
@@ -17,8 +18,7 @@ function isValidStory(story: RawStory): story is SheetStory {
 }
 
 export async function fetchStoriesFromGoogleSheet(): Promise<SheetStory[]> {
-  const LIBRARY_SHEET_ID = "1gIqy0R-jj3OdH3rtfSqjwrt5COdfRN-_pTVyVQOwsnI";
-  const url = `https://docs.google.com/spreadsheets/d/${LIBRARY_SHEET_ID}/export?format=csv&gid=0`;
+  const url = `https://docs.google.com/spreadsheets/d/${CONFIG.library.sheetId}/export?format=csv&gid=0`;
 
   const response = await axios.get<string>(url, {
     responseType: "text",

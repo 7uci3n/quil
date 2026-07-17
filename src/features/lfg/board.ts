@@ -23,8 +23,11 @@ export async function refreshBoard(
   const boardChanId = LFG_BOARD_CHANNEL_ID;
   if (!boardChanId) return;
 
-  // Try to edit the sticky message; else send new and store id.
-  const chan = ix.guild.channels.cache.get(boardChanId);
+  // Try to edit the sticky message; else send new and store id. Fall back to a
+  // fetch when the channel isn't cached, so the board still updates.
+  const chan =
+    ix.guild.channels.cache.get(boardChanId) ??
+    (await ix.guild.channels.fetch(boardChanId).catch(() => null));
   if (!chan || !("send" in chan)) return;
 
   const existingId = await getGuildState(guildId, BOARD_KEY);

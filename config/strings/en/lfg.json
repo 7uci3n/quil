@@ -1,5 +1,23 @@
 {
   "lfg": {
+    "board": {
+      "title": "📜 Group Up Board",
+      "ageSuffix": " · {days} DAY{s} LFG",
+      "fields": {
+        "pbp": "🧵 Play-by-Post",
+        "low": "⬇️ Low (2–4)",
+        "mid": "➡️ Mid (5–10)",
+        "high": "⬆️ High (11–16)",
+        "epic": "🌟 Epic (17+)"
+      },
+      "empty": {
+        "pbp": "No PBP adventurers waiting.",
+        "low": "No levels 2–4 in queue.",
+        "mid": "No levels 5–10 in queue.",
+        "high": "No levels 11–16 in queue.",
+        "epic": "No levels 17+ in queue."
+      }
+    },
     "errors": {
       "unknownTier": [
         "🖋 I don't recognize that tier. Try low, mid, high, epic, pbp, or auto.",

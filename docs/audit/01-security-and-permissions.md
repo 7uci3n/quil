@@ -78,7 +78,7 @@
 
 ## 🟢 SEC-5 — Google Sheet ID hardcoded (not a secret, but move to config)
 
-- [ ] **`src/utils/gsheet.ts:23`** · Verified: agent
+- [x] **`src/utils/gsheet.ts:23`** · Verified: agent — done: Sheet ID moved to `LIBRARY_SHEET_ID` (env, zod-defaulted); `gsheet.ts` reads `CONFIG.library.sheetId`.
 - **Issue:** The Sheet ID is inlined. It is a public CSV export with no SSRF surface
   (constant URL, 10s timeout, `validateStatus: 200`, HTML sniffing) — so **not** a
   vulnerability, but a maintainability smell.

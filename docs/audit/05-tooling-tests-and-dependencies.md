@@ -124,6 +124,6 @@ these are the strongest in the suite — real imports, clamping, level boundarie
 
 ## 🟢 TOOL-7 — `validaters.ts` filename typo
 
-- [ ] **`src/config/validaters.ts`** · Verified: agent
+- [x] **`src/config/validaters.ts`** · Verified: agent — done: renamed to `src/config/validators.ts` (+ 4 importers updated).
 - **Issue:** Should be `validators.ts`. Imported in only **one** file
   (`src/commands/resource.ts:13`) — cheap rename, low churn.

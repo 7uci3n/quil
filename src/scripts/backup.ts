@@ -5,7 +5,19 @@ import path from "path";
 
 const DB_FILE = process.env.DB_FILE || "./data/remnant.sqlite";
 const BACKUP_DIR = process.env.BACKUP_DIR || "./backups";
-const RETAIN_DAYS = Number(process.env.BACKUP_RETAIN_DAYS ?? 14);
+const RETAIN_DAYS_DEFAULT = 14;
+// Guard against a non-numeric BACKUP_RETAIN_DAYS silently disabling retention
+// (NaN cutoff would make every prune comparison false → unbounded disk growth).
+const RETAIN_DAYS = (() => {
+  const parsed = Number(process.env.BACKUP_RETAIN_DAYS ?? RETAIN_DAYS_DEFAULT);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    log.warn(
+      `[backup] invalid BACKUP_RETAIN_DAYS="${process.env.BACKUP_RETAIN_DAYS}" — using ${RETAIN_DAYS_DEFAULT}`,
+    );
+    return RETAIN_DAYS_DEFAULT;
+  }
+  return parsed;
+})();
 
 function stamp() {
   const d = new Date();

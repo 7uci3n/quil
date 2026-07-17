@@ -102,6 +102,6 @@
 - `src/db/index.ts:5-6` — dead imports (`time` from `console`, `date` from `zod`).
 - `src/domain/xp.ts:17` — `table.levels.sort(...)` mutates the imported JSON module at load (import side effect).
 - `src/config/app.config.ts:29-33` — `FeaturePrereqs` type declared but never used.
-- `src/commands/library.ts:99-116` — component collector has no `end` handler; buttons stay active after the 5-min timeout.
+- `src/commands/library.ts:99-116` — component collector has no `end` handler; buttons stay active after the 5-min timeout. **✅ Fixed:** `end` handler disables the buttons on timeout.
 - `src/commands/rewards.ts:111,164` — `sub` typed with a `"staff"` case that has no registered subcommand (`PERMS.staff` dead); `@ts-expect-error` + implicit `any` on `target?.send`.
 - `src/commands/initiate.ts:12-13,22` — `user` option `setRequired(true)` but description says "defaults to you"; the `?? interaction.user` fallback is dead.

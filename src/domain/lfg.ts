@@ -1,5 +1,6 @@
 import { EmbedBuilder } from "discord.js";
 import { levelForXP } from "./xp.js";
+import { t } from "../lib/i18n.js";
 
 export type LfgTier = "low" | "mid" | "high" | "epic" | "pbp";
 export const ORDER: LfgTier[] = ["pbp", "low", "mid", "high", "epic"];
@@ -100,58 +101,41 @@ export function aggregateList(
   return list;
 }
 
-export type LfgEmptyCopy = {
-  pbp: string;
-  low: string;
-  mid: string;
-  high: string;
-  epic: string;
-};
-
-export function buildLfgEmbed(
-  list: LfgList,
-  copy: LfgEmptyCopy = {
-    pbp: "No PBP adventurers waiting.",
-    low: "No levels 2–4 in queue.",
-    mid: "No levels 5–10 in queue.",
-    high: "No levels 11–16 in queue.",
-    epic: "No levels 17+ in queue.",
-  },
-): EmbedBuilder {
+export function buildLfgEmbed(list: LfgList): EmbedBuilder {
   const eb = new EmbedBuilder()
-    .setTitle("📜 Group Up Board")
+    .setTitle(t("lfg.board.title"))
     .setColor(0x4ea8de);
 
-  const section = (_title: string, rows: LfgSectionRow[], empty: string) =>
+  const section = (rows: LfgSectionRow[], tier: LfgTier) =>
     rows.length
       ? rows
           .map(
             (r) =>
-              `${r.name}${r.ageDays > 0 ? ` · ${r.ageDays} DAY${r.ageDays > 1 ? "S" : ""} LFG` : ""}`,
+              `${r.name}${r.ageDays > 0 ? t("lfg.board.ageSuffix", { days: r.ageDays, s: r.ageDays > 1 ? "S" : "" }) : ""}`,
           )
           .join("\n")
-      : empty;
+      : t(`lfg.board.empty.${tier}`);
 
   eb.addFields(
-    { name: "🧵 Play-by-Post", value: section("PBP", list.pbp, copy.pbp) },
+    { name: t("lfg.board.fields.pbp"), value: section(list.pbp, "pbp") },
     {
-      name: "⬇️ Low (2–4)",
-      value: section("Low", list.low, copy.low),
+      name: t("lfg.board.fields.low"),
+      value: section(list.low, "low"),
       inline: true,
     },
     {
-      name: "➡️ Mid (5–10)",
-      value: section("Mid", list.mid, copy.mid),
+      name: t("lfg.board.fields.mid"),
+      value: section(list.mid, "mid"),
       inline: true,
     },
     {
-      name: "⬆️ High (11–16)",
-      value: section("High", list.high, copy.high),
+      name: t("lfg.board.fields.high"),
+      value: section(list.high, "high"),
       inline: true,
     },
     {
-      name: "🌟 Epic (17+)",
-      value: section("Epic", list.epic, copy.epic),
+      name: t("lfg.board.fields.epic"),
+      value: section(list.epic, "epic"),
       inline: true,
     },
   );

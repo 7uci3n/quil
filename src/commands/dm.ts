@@ -7,7 +7,7 @@ import {
 } from "discord.js";
 
 import { CONFIG } from "../config/resolved.js";
-import { hasAnyRole } from "../config/validaters.js";
+import { hasAnyRole } from "../config/validators.js";
 import { t } from "../lib/i18n.js";
 
 const CFG = CONFIG.guild!.config;

@@ -9,7 +9,7 @@ import {
 } from "discord.js";
 import { CONFIG } from "../config/resolved.js";
 import { t } from "../lib/i18n.js";
-import { validateCommandPermissions } from "../config/validaters.js";
+import { validateCommandPermissions } from "../config/validators.js";
 import { adjustResource, getPlayer, getPlayerCC } from "../utils/db_queries.js";
 import { updateDTP } from "../domain/resource.js";
 import { showCharacterEmbed } from "../utils/embeds.js";

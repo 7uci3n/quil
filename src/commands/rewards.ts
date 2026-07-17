@@ -9,7 +9,7 @@ import {
 } from "discord.js";
 
 import { CONFIG } from "../config/resolved.js";
-import { canBypass } from "../config/validaters.js";
+import { canBypass } from "../config/validators.js";
 import {
   adjustResource,
   getPlayer,

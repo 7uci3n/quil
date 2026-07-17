@@ -15,6 +15,10 @@ const Env = z.object({
   // Permission-bypass controls — validated here rather than read ad-hoc.
   SUPERUSER_IDS: z.string().optional(),
   TEST_GUILD_IDS: z.string().optional(),
+  // Google Sheet backing the /library command (public CSV export).
+  LIBRARY_SHEET_ID: z
+    .string()
+    .default("1gIqy0R-jj3OdH3rtfSqjwrt5COdfRN-_pTVyVQOwsnI"),
 });
 
 const env = Env.parse(process.env);
@@ -52,5 +56,8 @@ export const CONFIG = {
   security: {
     superuserIds: parseCsv(env.SUPERUSER_IDS),
     testGuildIds: parseCsv(env.TEST_GUILD_IDS),
+  },
+  library: {
+    sheetId: env.LIBRARY_SHEET_ID,
   },
 } as const;
