@@ -23,9 +23,12 @@ export const StoryCache = {
 
 export const CharCache = {
   charsByUser: new Map<string, string[]>(),
-}
+};
 
-export async function getPlayer(userId: string, name?: string,): Promise<PlayerRow | undefined> {
+export async function getPlayer(
+  userId: string,
+  name?: string,
+): Promise<PlayerRow | undefined> {
   const db = getDb();
 
   // Base query
@@ -52,14 +55,20 @@ export async function getPlayerCC(userId: string): Promise<number> {
   const db = getDb();
   const result = await db.get<{ total: number }>(
     `SELECT COALESCE(SUM(cc), 0) as total FROM charlog WHERE userId = ?`,
-    userId
+    userId,
   );
   return result?.total ?? 0;
 }
 
-export async function adjustResource(userId: string, columns: string[], values: number[], set: boolean = false, name: string = "") {
+export async function adjustResource(
+  userId: string,
+  columns: string[],
+  values: number[],
+  set: boolean = false,
+  name: string = "",
+) {
   const db = getDb();
-  
+
   const allowed = ["xp", "level", "cp", "tp", "dtp", "dtp_updated", "cc"];
 
   for (const col of columns) {
@@ -67,9 +76,9 @@ export async function adjustResource(userId: string, columns: string[], values: 
       throw new Error(`Invalid resource column: ${col}`);
     }
   }
-  
-  const assignments = columns.map(col =>
-    set ? `${col} = ?` : `${col} = ${col} + ?`
+
+  const assignments = columns.map((col) =>
+    set ? `${col} = ?` : `${col} = ${col} + ?`,
   );
 
   const query = `
@@ -81,25 +90,93 @@ export async function adjustResource(userId: string, columns: string[], values: 
 
   const params: (string | number)[] = [...values, userId];
   if (name.trim() !== "") params.push(name);
-  await db.run(query,params);
-  return await getPlayer(userId, name)
+  await db.run(query, params);
+  return await getPlayer(userId, name);
 }
 
-export async function setActive(userId: string, name: string){
+export async function setActive(
+  userId: string,
+  name: string,
+): Promise<boolean> {
   const db = getDb();
 
-  if (await getPlayer(userId, name)){
+  if (!(await getPlayer(userId, name))) return false;
+
+  await db.run(
+    `UPDATE charlog SET active = 0 WHERE userId = ? AND name != ?`,
+    userId,
+    name,
+  );
+  await db.run(
+    `UPDATE charlog SET active = 1 WHERE userId = ? AND name = ?`,
+    userId,
+    name,
+  );
+  return true;
+}
+
+/**
+ * Retire (delete) a character and settle its Crew Coins — atomically.
+ * If `name` is empty/omitted, the user's active character is retired.
+ * Returns the retired row and whether it was the user's last character, or
+ * null if no matching character exists. All statements are parameterized.
+ */
+export async function retireCharacter(
+  userId: string,
+  name?: string,
+): Promise<{ row: PlayerRow; lastChar: boolean } | null> {
+  const db = getDb();
+
+  const row = await getPlayer(userId, name);
+  if (!row) return null;
+
+  await db.exec("BEGIN");
+  try {
     await db.run(
-      `UPDATE charlog SET active = 0 WHERE userId = ? AND name != ?`,
+      `DELETE FROM charlog WHERE userId = ? AND name = ?`,
       userId,
-      name
+      row.name,
     );
 
-    return await db.get(
-      `UPDATE charlog SET active = 1 WHERE userId = ? AND name = ?`,
+    let lastChar = false;
+    const activeLeft = await db.get(
+      `SELECT 1 AS ok FROM charlog WHERE userId = ? AND active = 1`,
       userId,
-      name
     );
+
+    if (!activeLeft) {
+      const next = await db.get<{ rowid: number }>(
+        `SELECT rowid FROM charlog WHERE userId = ? ORDER BY rowid ASC LIMIT 1`,
+        userId,
+      );
+      if (next) {
+        if (row.cc !== 0) {
+          await db.run(
+            `UPDATE charlog SET cc = cc + ? WHERE rowid = ?`,
+            row.cc,
+            next.rowid,
+          );
+        }
+        await db.run(
+          `UPDATE charlog SET active = 1 WHERE rowid = ?`,
+          next.rowid,
+        );
+      } else {
+        lastChar = true;
+      }
+    } else if (row.cc !== 0) {
+      await db.run(
+        `UPDATE charlog SET cc = cc + ? WHERE userId = ? AND active = 1`,
+        row.cc,
+        userId,
+      );
+    }
+
+    await db.exec("COMMIT");
+    return { row, lastChar };
+  } catch (err) {
+    await db.exec("ROLLBACK");
+    throw err;
   }
 }
 
@@ -127,7 +204,6 @@ export async function loadStoryCacheFromDB() {
   StoryCache.genres = Array.from(genres).sort();
   StoryCache.titlesByGenre = titlesByGenre;
   StoryCache.allTitles = allTitles.sort();
-
 }
 
 export async function loadCharCacheFromDB() {
@@ -135,9 +211,8 @@ export async function loadCharCacheFromDB() {
   const rows = await db.all<PlayerRow[]>(`SELECT * FROM charlog`);
 
   // Unique genres
-  
+
   const charsByUser = new Map<string, string[]>();
-  
 
   for (const player of rows) {
     if (!charsByUser.has(player.userId)) {

@@ -1,0 +1,10 @@
+{
+  "swap": {
+    "notFound": [
+      "🖋 No such adventurer in your ledger: **{name}**. Check the spelling?",
+      "🖋 I can't switch to **{name}** — there's no record of them under your name.",
+      "🖋 The quill finds no **{name}** among your characters."
+    ],
+    "switched": ["Switched Character - {name}"]
+  }
+}

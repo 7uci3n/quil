@@ -1,22 +1,23 @@
 {
-    "retire": {
+  "retire": {
+    "invalidName": [
+      "🖋 That name has characters the ledger won't accept — letters, numbers, spaces, apostrophes and hyphens only."
+    ],
     "noAdventurer": [
-        "🖋 Can’t retire what’s not recorded. **{name}** isn’t in the ledger.",
-        "🖋 No entry found for **{name}**. Maybe they never existed?",
-        "🖋 The quill searches but finds no record of **{name}**. Are you sure they were ever here?",
-        "🖋 I flipped through the pages, but **{name}** is nowhere to be found. Ghosts don’t get archived.",
-        "🖋 No active adventurer record for **{name}**. Perhaps they were a figment of your imagination?"
+      "🖋 Can’t retire what’s not recorded. **{name}** isn’t in the ledger.",
+      "🖋 No entry found for **{name}**. Maybe they never existed?",
+      "🖋 The quill searches but finds no record of **{name}**. Are you sure they were ever here?",
+      "🖋 I flipped through the pages, but **{name}** is nowhere to be found. Ghosts don’t get archived.",
+      "🖋 No active adventurer record for **{name}**. Perhaps they were a figment of your imagination?"
     ],
     "cancelled": [
-        "🖋 Retirement cancelled. The ink remains fresh.",
-        "🖋 Parchment intact. No changes made.",
-        "🖋 Quill rests. No retirement recorded.",
-        "🖋 Ledger unchanged. Retirement aborted.",
-        "🖋 The page stays open. Retirement not processed."
+      "🖋 Retirement cancelled. The ink remains fresh.",
+      "🖋 Parchment intact. No changes made.",
+      "🖋 Quill rests. No retirement recorded.",
+      "🖋 Ledger unchanged. Retirement aborted.",
+      "🖋 The page stays open. Retirement not processed."
     ],
-    "confirmLabel": [
-        "🖋 Type RETIRE to confirm."
-    ],
+    "confirmLabel": ["🖋 Type RETIRE to confirm."],
     "title": [
       "Closing the Ledger: {name}",
       "Final Entry Filed: {name}",

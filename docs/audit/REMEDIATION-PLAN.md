@@ -24,24 +24,26 @@ you touch logic.
 
 ## Phase 1 — Critical & security _(before ANY feature work)_
 
-- [ ] `SEC-1` 🔴 parameterize `/retire` DELETE + validate `char` (fold in `DATA-2`)
-- [ ] `BUG-1` 🔴 fix/replace `seed.me.ts` (import `initDb`)
-- [ ] `BUG-2` 🔴 fix inverted prod `--list`/`--clear-global` ordering
-- [ ] `SEC-2` 🟠 derive `CONFIG.env` from `NODE_ENV`/flag; validate in zod
-- [ ] `SEC-3` 🟠 zod-validate + document `SUPERUSER_IDS`/`TEST_GUILD_IDS`
-- [ ] `SEC-4` 🟠 add prod guard to `db:wipe`
-- [ ] `BUG-3` 🟠 `await` the `/reward` writes
-- [ ] `BUG-4` 🟠 `/swap` error on unknown character
-- [ ] `BUG-6` 🟠 `deferReply()` in `/sync`
-- **Exit:** No 🔴; the money/permission 🟠s closed. Add a regression test per fix.
+- [x] `SEC-1` 🔴 `/retire` uses parameterized statements + name validation, via a new `retireCharacter()`. Regression test incl. injection-style name.
+- [x] `DATA-2` 🔴→ `retireCharacter()` wraps DELETE + CC transfer + promote in a transaction (rollback on error). Tested.
+- [x] `BUG-1` 🔴 `seed.me.ts` now uses `initDb` + `migrateDb` (real schema); runtime-verified (exit 0).
+- [x] `BUG-2` 🔴 `register-commands.ts` handles `--list`/`--clear-global` before (and instead of) the deploy branch, in both prod and dev.
+- [x] `SEC-2` 🟠 `CONFIG.env` derived from `NODE_ENV` via `deriveEnv()`; `NODE_ENV` added to the zod schema. Tested.
+- [x] `SEC-3` 🟠 `SUPERUSER_IDS`/`TEST_GUILD_IDS` added to the zod schema + `.env.example`, parsed via `parseCsv()`, consumed from `CONFIG.security`. Tested.
+- [x] `SEC-4` 🟠 `db:wipe` refuses in production without `--force`/`CONFIRM_WIPE=yes` (`shouldRefuseWipe()`). Tested + runtime-verified.
+- [x] `BUG-3` 🟠 `await`ed both `/reward` `adjustResource` writes.
+- [x] `BUG-4` 🟠 `setActive()` returns a boolean; `/swap` replies an error (i18n) instead of false success. Tested.
+- [x] `BUG-6` 🟠 `/sync` defers first, then `editReply`s.
+- Byproducts: `DATA-7` (`/sync` rollback), partial `DATA-4` (`setActive` now `db.run` + boolean; transaction/index still Phase 2), `DOC-5` (swap header + "libary" typo).
+- **Exit ✅:** No 🔴 remain; money/permission 🟠s closed. lint + typecheck + 57 tests green; scripts runtime-verified.
 
 ## Phase 2 — Data integrity & atomicity
 
 - [ ] `DATA-1` 🟠 atomic conditional debit (no negative balances)
 - [ ] `DATA-2` 🟠 wrap `/retire` in a transaction (done with `SEC-1`)
 - [ ] `DATA-3` 🟠 fix `/buy` CC scope
-- [ ] `DATA-7` 🟠 `/sync` rollback on error
-- [ ] `DATA-4` 🟡 `setActive` transaction + partial unique index
+- [x] `DATA-7` 🟠 `/sync` rollback on error _(done in Phase 1 with BUG-6)_
+- [~] `DATA-4` 🟡 `setActive` now `db.run` + returns boolean (Phase 1); transaction + partial unique index still TODO
 - [ ] `DATA-5` 🟡 consistent DTP normalization + rounding
 - [ ] `DATA-6` 🟡 correct `dmrewards.json` anomalies
 - [ ] `BUG-5` 🟠 validate all `/reward` recipients before applying

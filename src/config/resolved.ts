@@ -11,12 +11,30 @@ const Env = z.object({
   DEV_GUILD_ID: z.string().optional(),
   DEV_DISCORD_TOKEN: z.string().optional(),
   DEV_APP_ID: z.string().optional(),
+  NODE_ENV: z.string().optional(),
+  // Permission-bypass controls — validated here rather than read ad-hoc.
+  SUPERUSER_IDS: z.string().optional(),
+  TEST_GUILD_IDS: z.string().optional(),
 });
 
 const env = Env.parse(process.env);
 
+/** Map NODE_ENV to the bot's coarse environment flag. */
+export function deriveEnv(nodeEnv?: string): "prod" | "dev" {
+  return nodeEnv === "production" ? "prod" : "dev";
+}
+
+/** Parse a comma-separated env value into a trimmed, non-empty list. */
+export function parseCsv(value?: string): string[] {
+  return (value ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 export const CONFIG = {
   ...DEFAULT_CONFIG,
+  env: deriveEnv(env.NODE_ENV),
   secrets: {
     token: env.DISCORD_TOKEN,
     devToken: env.DEV_DISCORD_TOKEN,
@@ -30,5 +48,9 @@ export const CONFIG = {
     fundId: env.GUILD_FUND_ID,
     devGuildId: env.DEV_GUILD_ID,
     devAppId: env.DEV_APP_ID,
+  },
+  security: {
+    superuserIds: parseCsv(env.SUPERUSER_IDS),
+    testGuildIds: parseCsv(env.TEST_GUILD_IDS),
   },
 } as const;

@@ -27,7 +27,7 @@ const APP_ID = IS_DEV ? CONFIG.system.devAppId : CONFIG.system.appId;
 // Safety guards
 if (PROD && !GUILD_ID) {
   throw new Error(
-    "Refusing to run with --prod/--production without GUILD_ID set in env."
+    "Refusing to run with --prod/--production without GUILD_ID set in env.",
   );
 }
 
@@ -61,7 +61,7 @@ async function loadCommandJSONs(): Promise<object[]> {
     const mod: CommandModule = await import(modUrl);
     if (!mod.data) continue;
     const cmdJSON = mod.data.toJSON();
-    if (IS_DEV){
+    if (IS_DEV) {
       // Modify the name dynamically
       cmdJSON.name = `dev_${cmdJSON.name}`;
     }
@@ -91,35 +91,11 @@ async function main() {
     }[];
     console.log(
       "Global commands: ",
-      global.map((c) => c.name)
+      global.map((c) => c.name),
     );
   }
 
-  if (PROD) {
-    if (!GUILD_ID) {
-      throw new Error(
-        "GUILD_ID not set. Refusing to deploy globally. Set GUILD_ID or pass --clear-global/--list."
-      );
-    }
-    console.log(`Upserting ${body.length} commands to guild ${GUILD_ID}…`);
-    await rest.put(Routes.applicationGuildCommands(APP_ID, GUILD_ID), { body });
-    console.log("✅ Guild commands updated (instant).");
-    return;
-  } else if (DEV_GUILD_ID) {
-    console.log(
-      `Upserting ${body.length} commands to dev guild ${DEV_GUILD_ID}…`
-    );
-    await rest.put(Routes.applicationGuildCommands(APP_ID, DEV_GUILD_ID), {
-      body,
-    });
-    console.log("✅ Guild commands updated (instant).");
-  } else {
-    // HARD GUARD: refuse accidental global deploys
-    throw new Error(
-      "DEV_GUILD_ID not set. Refusing to deploy globally. Set DEV_GUILD_ID or pass --clear-global/--list."
-    );
-  }
-
+  // Read-only / clear operations run regardless of prod/dev and must NOT deploy.
   if (LIST) {
     await list();
     return;
@@ -129,7 +105,32 @@ async function main() {
     console.log("Clearing ALL GLOBAL commands...");
     await rest.put(Routes.applicationCommands(APP_ID), { body: [] });
     console.log(
-      "✅ Global commands have been cleared (UI may cache for a bit)."
+      "✅ Global commands have been cleared (UI may cache for a bit).",
+    );
+    return;
+  }
+
+  if (PROD) {
+    if (!GUILD_ID) {
+      throw new Error(
+        "GUILD_ID not set. Refusing to deploy globally. Set GUILD_ID or pass --clear-global/--list.",
+      );
+    }
+    console.log(`Upserting ${body.length} commands to guild ${GUILD_ID}…`);
+    await rest.put(Routes.applicationGuildCommands(APP_ID, GUILD_ID), { body });
+    console.log("✅ Guild commands updated (instant).");
+  } else if (DEV_GUILD_ID) {
+    console.log(
+      `Upserting ${body.length} commands to dev guild ${DEV_GUILD_ID}…`,
+    );
+    await rest.put(Routes.applicationGuildCommands(APP_ID, DEV_GUILD_ID), {
+      body,
+    });
+    console.log("✅ Guild commands updated (instant).");
+  } else {
+    // HARD GUARD: refuse accidental global deploys
+    throw new Error(
+      "DEV_GUILD_ID not set. Refusing to deploy globally. Set DEV_GUILD_ID or pass --clear-global/--list.",
     );
   }
 }

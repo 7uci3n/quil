@@ -294,7 +294,7 @@ async function handleCustom(ix: ChatInputCommandInteraction) {
     const delta = computeCustomReward({ xp: xpIn, gp: gpIn, tp });
 
     const next = applyResourceDeltas(before, { ...delta, tp });
-    adjustResource(
+    await adjustResource(
       u.id,
       ["cp", "tp", "xp", "level"],
       [next.cp, next.tp, next.xp, next.level],
@@ -386,7 +386,7 @@ async function handleDm(ix: ChatInputCommandInteraction) {
 
   const delta = computeDmReward(level, half);
   const next = applyResourceDeltas(before, delta);
-  adjustResource(
+  await adjustResource(
     u.id,
     ["cp", "tp", "xp", "level"],
     [next.cp, next.tp, next.xp, next.level],
