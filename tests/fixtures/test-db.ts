@@ -37,9 +37,10 @@ export async function seedTestPlayer(
     active?: boolean;
   },
 ) {
-  await db.run(
+  db.prepare(
     `INSERT INTO charlog (userId, name, level, xp, cp, tp, dtp, dtp_updated, cc, active)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run(
     data.userId,
     data.name,
     data.level ?? 1,

@@ -13,19 +13,19 @@ async function main() {
   const db = getDb();
 
   // minimal seed: you (125.00 GP, 4 GT)
-  await db.run(
+  db.prepare(
     `INSERT INTO charlog (userId, name, level, xp, cp, tp, active)
      VALUES (?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(userId, name) DO UPDATE SET
        level=excluded.level, xp=excluded.xp,
        cp=excluded.cp, tp=excluded.tp, active=excluded.active`,
-    [MY_ID, "Donovan Test", 3, 900, 12500, 4, 1],
-  );
+  ).run(MY_ID, "Donovan Test", 3, 900, 12500, 4, 1);
 
-  const row = await db.get(
-    `SELECT name, level, xp, cp, tp FROM charlog WHERE userId = ? AND active = 1`,
-    MY_ID,
-  );
+  const row = db
+    .prepare(
+      `SELECT name, level, xp, cp, tp FROM charlog WHERE userId = ? AND active = 1`,
+    )
+    .get(MY_ID);
   log.info("Seeded:", row);
 
   await closeDb();

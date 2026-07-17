@@ -1,6 +1,5 @@
 import { log } from "../lib/log.js";
-import { open } from "sqlite";
-import sqlite3 from "sqlite3";
+import Database from "better-sqlite3";
 import fs from "fs";
 import path from "path";
 
@@ -19,16 +18,16 @@ function stamp() {
 async function main() {
   fs.mkdirSync(BACKUP_DIR, { recursive: true });
 
-  const db = await open({ filename: DB_FILE, driver: sqlite3.Database });
+  const db = new Database(DB_FILE);
 
   // Destination file (uncompressed .sqlite snapshot)
   const dest = path.resolve(BACKUP_DIR, `remnant-${stamp()}.sqlite`);
   const escaped = dest.replace(/'/g, "''"); // escape single quotes for SQL
 
   // Create a consistent snapshot
-  await db.exec(`PRAGMA wal_checkpoint(FULL);`);
-  await db.exec(`VACUUM INTO '${escaped}';`);
-  await db.close();
+  db.pragma("wal_checkpoint(FULL)");
+  db.exec(`VACUUM INTO '${escaped}';`);
+  db.close();
 
   log.info(`[backup] wrote ${dest}`);
 

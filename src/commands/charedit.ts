@@ -98,13 +98,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       });
     }
 
-    const db = await getDb();
-    await db.run(
-      `UPDATE charlog SET name = ? WHERE userId = ? AND name = ?`,
-      newName,
-      resolvedUserId,
-      row.name,
-    );
+    getDb()
+      .prepare(`UPDATE charlog SET name = ? WHERE userId = ? AND name = ?`)
+      .run(newName, resolvedUserId, row.name);
     await loadCharCacheFromDB();
 
     const note = isSelf

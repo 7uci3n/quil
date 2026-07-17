@@ -19,16 +19,12 @@ async function seedChar(
   cc = 0,
   cp = 0,
 ) {
-  const db = getDb();
-  await db.run(
-    `INSERT INTO charlog (userId, name, level, xp, cp, tp, active, dtp, dtp_updated, cc)
-     VALUES (?, ?, 1, 0, ?, 0, ?, 0, 0, ?)`,
-    userId,
-    name,
-    cp,
-    active,
-    cc,
-  );
+  getDb()
+    .prepare(
+      `INSERT INTO charlog (userId, name, level, xp, cp, tp, active, dtp, dtp_updated, cc)
+       VALUES (?, ?, 1, 0, ?, 0, ?, 0, 0, ?)`,
+    )
+    .run(userId, name, cp, active, cc);
 }
 
 beforeEach(async () => {
@@ -143,11 +139,14 @@ describe("one active character invariant (DATA-4)", () => {
   it("rejects a second active row via the partial unique index", async () => {
     await seedChar("i1", "A", 1);
     const db = getDb();
-    await expect(
-      db.run(
-        `INSERT INTO charlog (userId, name, level, xp, cp, tp, active, dtp, dtp_updated, cc)
-         VALUES ('i1', 'B', 1, 0, 0, 0, 1, 0, 0, 0)`,
-      ),
-    ).rejects.toThrow();
+    // better-sqlite3 throws synchronously on the constraint violation.
+    expect(() =>
+      db
+        .prepare(
+          `INSERT INTO charlog (userId, name, level, xp, cp, tp, active, dtp, dtp_updated, cc)
+           VALUES ('i1', 'B', 1, 0, 0, 0, 1, 0, 0, 0)`,
+        )
+        .run(),
+    ).toThrow();
   });
 });

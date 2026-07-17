@@ -16,10 +16,9 @@ already present in the codebase at the time Claude guardrails were adopted.
 - **Runtime:** Node.js 20+ with ESM (`"type": "module"`).
 - **Language:** TypeScript 5.9, compiled via `tsc`; `tsx` for dev/scripts.
 - **Platform:** discord.js v14 (slash commands, one file per command in `src/commands/`).
-- **Persistence:** SQLite via the async `sqlite` wrapper over `sqlite3`
-  (`src/db/index.ts`, WAL mode; data/remnant.sqlite), with init/migrate/backup/seed
-  scripts in `src/scripts/`. (`better-sqlite3` is declared but unused — see
-  docs/audit `DEP-1`.)
+- **Persistence:** SQLite via **`better-sqlite3`** (synchronous; `src/db/index.ts`,
+  WAL mode; data/remnant.sqlite), with init/migrate/backup/seed scripts in
+  `src/scripts/`. (Migrated from the async `sqlite`/`sqlite3` wrapper — see ADR-0004.)
 - **Validation:** zod for config and input validation (`src/config/validaters.ts`).
 - **Layering:** `commands/` (Discord entrypoints) → `domain/` (business logic) →
   `db/` + `utils/db_queries.ts` (persistence). Typed i18n strings in `config/strings/`.

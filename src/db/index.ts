@@ -1,30 +1,35 @@
 import { log } from "../lib/log.js";
-import { open, Database } from "sqlite";
-import sqlite3 from "sqlite3";
+import Database from "better-sqlite3";
 import fs from "fs";
 import path from "path";
 import { DEFAULT_CONFIG } from "../config/app.config.js";
 import { dtpDayBoundary } from "../domain/dtp.js";
 
-export type Sqlite = Database<sqlite3.Database, sqlite3.Statement>;
+export type Sqlite = Database.Database;
 let _db: Sqlite | null = null;
 
 const DEFAULT_DB =
   process.env.DB_FILE || path.resolve(process.cwd(), "data/remnant.sqlite");
 const FUND_ID = process.env.GUILD_FUND_ID || "sys:fund:remnant";
 
-export async function initDb(dbFile = DEFAULT_DB) {
+function applyPragmas(db: Sqlite) {
+  db.pragma("journal_mode = WAL");
+  db.pragma("synchronous = NORMAL");
+  db.pragma("foreign_keys = ON");
+  db.pragma("busy_timeout = 5000");
+  db.pragma("wal_autocheckpoint = 1000");
+}
+
+// NOTE: functions keep async signatures as a thin compatibility shim so callers
+// are unchanged; better-sqlite3 itself is synchronous, so each body runs without
+// interleaving and multi-step mutations use db.transaction() (see db_queries.ts).
+export async function initDb(dbFile = DEFAULT_DB): Promise<Sqlite> {
   fs.mkdirSync(path.dirname(dbFile), { recursive: true });
-  const db = await open({ filename: dbFile, driver: sqlite3.Database });
+  const db = new Database(dbFile);
+  applyPragmas(db);
 
-  // Character log database (table + pragmas)
-  await db.exec(`
-    PRAGMA journal_mode = WAL;
-    PRAGMA synchronous = NORMAL;
-    PRAGMA foreign_keys = ON;
-    PRAGMA busy_timeout = 5000;
-    PRAGMA wal_autocheckpoint = 1000;
-
+  // Character log
+  db.exec(`
     CREATE TABLE IF NOT EXISTS charlog (
       userId TEXT,
       name   TEXT NOT NULL,
@@ -37,31 +42,18 @@ export async function initDb(dbFile = DEFAULT_DB) {
     );
   `);
 
-  // LFG presence tracking (table + index) [deprecated]
-  // await db.exec(`
-  //   CREATE TABLE IF NOT EXISTS lfg_presence (
-  //     userId  TEXT NOT NULL,
-  //     guildId TEXT NOT NULL,
-  //     tier    TEXT NOT NULL CHECK (tier IN ('low','mid','high','epic','pbp')),
-  //     since   INTEGER NOT NULL DEFAULT (strftime('%s','now')),
-  //     PRIMARY KEY (userId, tier),
-  //     FOREIGN KEY (userId) REFERENCES charlog(userId) ON DELETE CASCADE
-  //   );
-  //   CREATE INDEX IF NOT EXISTS idx_lfg_guild_tier ON lfg_presence (guildId, tier, since);
-  // `);
-  // drop above table since we've got a better LFG table and make sure indexes are gone
-  await db.exec(
+  // drop the deprecated lfg_presence table/index if present
+  db.exec(
     `DROP TABLE IF EXISTS lfg_presence; DROP INDEX IF EXISTS idx_lfg_guild_tier;`,
   );
 
-  // New LFG status table + guild state table
-  await db.exec(`
-    -- LFG registry
+  // LFG status + guild state
+  db.exec(`
     CREATE TABLE IF NOT EXISTS lfg_status (
       userId    TEXT PRIMARY KEY,
       guildId   TEXT NOT NULL,
       name      TEXT NOT NULL,
-      startedAt INTEGER NOT NULL,  -- ms since epoch
+      startedAt INTEGER NOT NULL,
       low       INTEGER NOT NULL DEFAULT 0,
       mid       INTEGER NOT NULL DEFAULT 0,
       high      INTEGER NOT NULL DEFAULT 0,
@@ -70,112 +62,73 @@ export async function initDb(dbFile = DEFAULT_DB) {
       updatedAt INTEGER NOT NULL
     );
 
-    -- sticky board message id (and other guild-scoped flags)
     CREATE TABLE IF NOT EXISTS guild_state (
       guildId TEXT NOT NULL,
       key     TEXT NOT NULL,
       value   TEXT NOT NULL,
       PRIMARY KEY (guildId, key)
     );
-
-      `);
+  `);
 
   // create the fund row if missing
-  await db.run(
+  db.prepare(
     `INSERT INTO charlog (userId, name, level, xp, cp, tp, active)
-     VALUES (?, 'Adventurers Guild Fund', 20, 305000, 500000, 0, true)
+     VALUES (?, 'Adventurers Guild Fund', 20, 305000, 500000, 0, 1)
      ON CONFLICT(userId,name) DO NOTHING`,
-    FUND_ID,
-  );
+  ).run(FUND_ID);
 
   _db = db;
   log.info(`📂 Database initialized: ${dbFile}`);
   return db;
 }
 
-export async function migrateDb(dbFile = DEFAULT_DB) {
-  const db = await open({ filename: dbFile, driver: sqlite3.Database });
+export async function migrateDb(dbFile = DEFAULT_DB): Promise<Sqlite> {
+  const db = new Database(dbFile);
+  applyPragmas(db);
 
-  // Ensure WAL mode is enabled (critical for consistent state)
-  await db.exec(`
-    PRAGMA journal_mode = WAL;
-    PRAGMA synchronous = NORMAL;
-    PRAGMA foreign_keys = ON;
-    PRAGMA busy_timeout = 5000;
-  `);
+  const hasColumn = (table: string, column: string): boolean =>
+    !!db
+      .prepare(`SELECT 1 FROM pragma_table_info(?) WHERE name = ?`)
+      .get(table, column);
 
-  // add COLUMN active to charlog
-  const migrate_check1 = await db.get(
-    `SELECT * FROM pragma_table_info('charlog') WHERE name = 'active';`,
-  );
-  if (!migrate_check1) {
-    await db.exec(`
-    ALTER TABLE charlog
-    ADD COLUMN active BOOLEAN NOT NULL DEFAULT 1;
-  `);
-  }
-  // add COLUMN dtp to charlog
-  const migrate_check2 = await db.get(
-    `SELECT * FROM pragma_table_info('charlog') WHERE name = 'dtp';`,
-  );
-  if (!migrate_check2) {
-    await db.exec(`
-    ALTER TABLE charlog
-    ADD COLUMN dtp INTEGER NOT NULL DEFAULT 0;
-  `);
-  }
-  // add COLUMN dtp_updated to charlog
-  const migrate_check3 = await db.get(
-    `SELECT * FROM pragma_table_info('charlog') WHERE name = 'dtp_updated';`,
-  );
-  const dtpRate = DEFAULT_CONFIG.guild?.config.features.dtp?.rate ?? 1;
-  const timestampNormal = dtpDayBoundary(Date.now() / 1000, dtpRate);
-  if (!migrate_check3) {
-    await db.exec(`
-    ALTER TABLE charlog
-    ADD COLUMN dtp_updated INTEGER NOT NULL DEFAULT ${timestampNormal};
-  `);
-  }
-  // add library table
-  const migrate_check4 = await db.get(
-    `SELECT * FROM pragma_table_info('library') WHERE name = 'title';`,
-  );
-  if (!migrate_check4) {
-    await db.exec(`
-    PRAGMA journal_mode = WAL;
-    PRAGMA synchronous = NORMAL;
-    PRAGMA foreign_keys = ON;
-    PRAGMA busy_timeout = 5000;
-    PRAGMA wal_autocheckpoint = 1000;
-
-    CREATE TABLE IF NOT EXISTS library (
-      title TEXT,
-      genre   TEXT NOT NULL,
-      content  TEXT NOT NULL,
-      PRIMARY KEY (title)
+  if (!hasColumn("charlog", "active")) {
+    db.exec(
+      `ALTER TABLE charlog ADD COLUMN active BOOLEAN NOT NULL DEFAULT 1;`,
     );
-  `);
   }
-  // add COLUMN cc to charlog
-  const migrate_check5 = await db.get(
-    `SELECT * FROM pragma_table_info('charlog') WHERE name = 'cc';`,
-  );
-  if (!migrate_check5) {
-    await db.exec(`
-    ALTER TABLE charlog
-    ADD COLUMN cc INTEGER NOT NULL DEFAULT 0;
-  `);
+  if (!hasColumn("charlog", "dtp")) {
+    db.exec(`ALTER TABLE charlog ADD COLUMN dtp INTEGER NOT NULL DEFAULT 0;`);
+  }
+  if (!hasColumn("charlog", "dtp_updated")) {
+    const dtpRate = DEFAULT_CONFIG.guild?.config.features.dtp?.rate ?? 1;
+    const timestampNormal = dtpDayBoundary(Date.now() / 1000, dtpRate);
+    db.exec(
+      `ALTER TABLE charlog ADD COLUMN dtp_updated INTEGER NOT NULL DEFAULT ${timestampNormal};`,
+    );
+  }
+  if (!hasColumn("library", "title")) {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS library (
+        title   TEXT,
+        genre   TEXT NOT NULL,
+        content TEXT NOT NULL,
+        PRIMARY KEY (title)
+      );
+    `);
+  }
+  if (!hasColumn("charlog", "cc")) {
+    db.exec(`ALTER TABLE charlog ADD COLUMN cc INTEGER NOT NULL DEFAULT 0;`);
   }
 
-  // Enforce "one active character per user": normalize any existing violations
+  // Enforce "one active character per user": normalize existing violations
   // (keep the lowest-rowid active row), then add a partial unique index.
-  await db.exec(`
+  db.exec(`
     UPDATE charlog SET active = 0
     WHERE active = 1 AND rowid NOT IN (
       SELECT MIN(rowid) FROM charlog WHERE active = 1 GROUP BY userId
     );
   `);
-  await db.exec(
+  db.exec(
     `CREATE UNIQUE INDEX IF NOT EXISTS idx_charlog_one_active
      ON charlog (userId) WHERE active = 1;`,
   );
@@ -192,7 +145,7 @@ export function getDb(): Sqlite {
 
 export async function closeDb(): Promise<void> {
   if (_db) {
-    await _db.close();
+    _db.close();
     _db = null;
   }
 }

@@ -16,11 +16,9 @@ export const data = new SlashCommandBuilder()
   .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers); // for now restrict to staff
 
 export async function execute(interaction: ChatInputCommandInteraction) {
-  const db = getDb();
-  const row = await db.get(
-    `SELECT name, level, xp, cp, tp FROM charlog WHERE userId = ?`,
-    FUND_ID,
-  );
+  const row = getDb()
+    .prepare(`SELECT name, level, xp, cp, tp FROM charlog WHERE userId = ?`)
+    .get(FUND_ID) as { name?: string; cp: number; tp: number } | undefined;
 
   if (!row) {
     await interaction.reply({ content: t("guildfund.errors.notFound") });

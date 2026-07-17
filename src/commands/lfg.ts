@@ -57,11 +57,9 @@ const PERMS = {
 async function getCharlogXPName(
   userId: string,
 ): Promise<{ xp: number; name: string } | null> {
-  const db = await getDb();
-  const row = await db.get<{ xp: number; name: string }>(
-    `SELECT xp, name FROM charlog WHERE userId = ? AND active = 1`,
-    userId,
-  );
+  const row = getDb()
+    .prepare(`SELECT xp, name FROM charlog WHERE userId = ? AND active = 1`)
+    .get(userId) as { xp: number; name: string } | undefined;
   return row ?? null;
 }
 

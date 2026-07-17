@@ -23,28 +23,15 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   const rows = await fetchStoriesFromGoogleSheet(); // ~200 rows
 
   const db = getDb();
-  await db.exec("BEGIN TRANSACTION");
-  try {
-    // Clear and replace (for simple small datasets)
-    await db.run("DELETE FROM library");
-
-    const insertStmt = await db.prepare(
-      `INSERT INTO library (title, genre, content)
-       VALUES (?, ?, ?)`,
-    );
-    try {
-      for (const row of rows) {
-        await insertStmt.run(row.title, row.genre, row.content);
-      }
-    } finally {
-      await insertStmt.finalize();
-    }
-
-    await db.exec("COMMIT");
-  } catch (err) {
-    await db.exec("ROLLBACK");
-    throw err;
-  }
+  const insert = db.prepare(
+    `INSERT INTO library (title, genre, content) VALUES (?, ?, ?)`,
+  );
+  // Clear and replace atomically (auto-rollback on any failed insert).
+  const replaceAll = db.transaction((items: typeof rows) => {
+    db.prepare("DELETE FROM library").run();
+    for (const row of items) insert.run(row.title, row.genre, row.content);
+  });
+  replaceAll(rows);
 
   await loadCharCacheFromDB();
   await loadStoryCacheFromDB(); // refresh in-memory cache

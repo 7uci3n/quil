@@ -23,7 +23,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   let dbStatus = "skipped";
   try {
-    await db.get("SELECT 1");
+    db.prepare("SELECT 1").get();
     dbStatus = "ok";
   } catch (err) {
     dbStatus = "error";

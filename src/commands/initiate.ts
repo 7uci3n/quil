@@ -65,12 +65,11 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   // --- create baseline record (Level 3 / 900 XP / 80 GP / 0 TP) ---
   // Insert inactive, then setActive() flips exactly one active char atomically —
   // keeps the "one active character" invariant (enforced by a partial unique index).
-  await db.run(
+  db.prepare(
     `INSERT INTO charlog (userId, name, level, xp, cp, tp, active, dtp, dtp_updated)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(userId,name) DO NOTHING`,
-    [targetUser.id, rawName, 3, 900, 8000, 0, 0, 0, timestampNormal],
-  );
+  ).run(targetUser.id, rawName, 3, 900, 8000, 0, 0, 0, timestampNormal);
 
   await setActive(targetUser.id, rawName);
 

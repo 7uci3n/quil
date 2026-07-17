@@ -1,9 +1,19 @@
 # 0004 - Migrate the SQLite driver to better-sqlite3
 
-**Status:** proposed
+**Status:** accepted (implemented 2026-07-17 on `feat/better-sqlite3`)
 **Date:** 2026-07-17
 **Deciders:** Project maintainers (deploy timing coordinated with the server team)
 **Refs:** docs/audit `DEP-1`, `DATA-1`, `DATA-4`; ADR-0001, ADR-0002
+
+## Implementation note
+
+Implemented keeping the db-layer function **signatures async** as a thin
+compatibility shim (bodies are synchronous better-sqlite3 + `db.transaction()`),
+so the ~40 command/domain call sites were untouched — a surgical, low-risk diff.
+The `:memory:` test-fixture simplification anticipated below did **not** apply:
+`initDb` and `migrateDb` open separate connections, so the fixture keeps its
+temp-file approach. Verified: 62 tests pass, and the dev image opened the existing
+sqlite3-created DB and reached "Ready" with data intact.
 
 ## Context
 
