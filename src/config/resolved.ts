@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { DEFAULT_CONFIG } from "./app.config.js";
+import type { DevConfig } from "./app.config.js";
 import { z } from "zod";
 
 const Env = z.object({
@@ -36,9 +37,49 @@ export function parseCsv(value?: string): string[] {
     .filter(Boolean);
 }
 
+/**
+ * Deep-merge `src` over a shallow clone of `target` (ADR-0008): plain objects
+ * merge recursively; arrays and primitives replace wholesale; an `undefined`
+ * override leaves the target value intact. Never mutates `target`.
+ */
+const isPlainObject = (v: unknown): v is Record<string, unknown> =>
+  v !== null && typeof v === "object" && !Array.isArray(v);
+
+export function deepMerge<T>(target: T, src: unknown): T {
+  if (!isPlainObject(src)) return (src === undefined ? target : src) as T;
+  const result = { ...(target as Record<string, unknown>) };
+  for (const key of Object.keys(src)) {
+    const s = src[key];
+    const t = result[key];
+    result[key] = isPlainObject(t) && isPlainObject(s) ? deepMerge(t, s) : s;
+  }
+  return result as T;
+}
+
+/** Load the optional git-ignored dev override — only outside production. */
+async function loadDevOverride(env: "prod" | "dev"): Promise<DevConfig> {
+  if (env === "prod") return {};
+  // `string` (not a literal) so tsc treats this as a dynamic import and does not
+  // try to resolve the deliberately-absent, git-ignored module at build time.
+  const spec: string = "./app.config.dev.js";
+  try {
+    const mod = (await import(spec)) as { DEV_CONFIG?: DevConfig };
+    console.log("[config] dev override applied (app.config.dev.ts)");
+    return mod.DEV_CONFIG ?? {};
+  } catch {
+    return {}; // absent file is the normal case
+  }
+}
+
+const resolvedEnv = deriveEnv(env.NODE_ENV);
+const baseConfig = deepMerge(
+  DEFAULT_CONFIG,
+  await loadDevOverride(resolvedEnv),
+);
+
 export const CONFIG = {
-  ...DEFAULT_CONFIG,
-  env: deriveEnv(env.NODE_ENV),
+  ...baseConfig,
+  env: resolvedEnv,
   secrets: {
     token: env.DISCORD_TOKEN,
     devToken: env.DEV_DISCORD_TOKEN,

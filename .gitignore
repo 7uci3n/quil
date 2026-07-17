@@ -1,6 +1,10 @@
 
 .env
 
+# Local dev config override (ADR-0008) — your dev guild/role/channel ids, never commit
+src/config/app.config.dev.ts
+src/config/app.config.dev.js
+
 node_modules
 
 dist
