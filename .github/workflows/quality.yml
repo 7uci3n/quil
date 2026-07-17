@@ -1,0 +1,40 @@
+name: Quality
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Lint/format are advisory for now: the existing codebase predates these
+      # gates (109 ESLint errors, 100 unformatted files). Clean up incrementally;
+      # pre-commit auto-fixes only touched files. Flip continue-on-error off once
+      # the baseline is clean.
+      - name: Lint (advisory)
+        run: npx eslint .
+        continue-on-error: true
+
+      - name: Format check (advisory)
+        run: npx prettier --check .
+        continue-on-error: true
+
+      - name: Type check / build
+        run: npm run build
+
+      - name: Test
+        run: npm test
