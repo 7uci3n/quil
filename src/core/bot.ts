@@ -13,11 +13,14 @@ import path from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
 
 import { CONFIG } from "../config/resolved.js";
-import { initDb } from "../db/index.js";
+import { initDb, closeDb } from "../db/index.js";
 
 import * as retire from "../commands/retire.js";
 import { t } from "../lib/i18n.js";
-import { loadCharCacheFromDB, loadStoryCacheFromDB } from "../utils/db_queries.js";
+import {
+  loadCharCacheFromDB,
+  loadStoryCacheFromDB,
+} from "../utils/db_queries.js";
 import { autocomplete } from "../utils/autocomplete.js";
 
 // figure out if we're executing from dist or src
@@ -43,12 +46,12 @@ async function loadCommands() {
   const files = fsSync
     .readdirSync(commandsDir)
     .filter(
-      (f) => f.endsWith(ext) && !f.endsWith(".d.ts") && !f.endsWith(".map")
+      (f) => f.endsWith(ext) && !f.endsWith(".d.ts") && !f.endsWith(".map"),
     );
 
   console.log(
     `Command files found (${ext}):`,
-    files.map((f) => path.join(commandsDir, f))
+    files.map((f) => path.join(commandsDir, f)),
   );
 
   for (const f of files) {
@@ -60,7 +63,7 @@ async function loadCommands() {
         continue;
       }
       const cmdJSON = mod.data.toJSON();
-      if (isDevelopment){
+      if (isDevelopment) {
         // Modify the name dynamically
         cmdJSON.name = `dev_${cmdJSON.name}`;
       }
@@ -86,7 +89,7 @@ const guildCfg = CONFIG.guild!.config;
 
 if (!guildCfg) {
   throw new Error(
-    `[config] GuildId "${guildId}" not found. Please set up your guild ID in config in src/config/app.config.ts`
+    `[config] GuildId "${guildId}" not found. Please set up your guild ID in config in src/config/app.config.ts`,
   );
 }
 
@@ -166,7 +169,7 @@ client.once(Events.ClientReady, async () => {
   await loadCharCacheFromDB();
   await loadStoryCacheFromDB();
   console.log(
-    `Ready as ${client.user?.tag}. Guild: ${guildId} (${guildCfg.name})`
+    `Ready as ${client.user?.tag}. Guild: ${guildId} (${guildCfg.name})`,
   );
 });
 const DEV_TOKEN = CONFIG.secrets.devToken;
@@ -176,7 +179,7 @@ if (isDevelopment) {
   console.log("🚀 Starting in development mode...");
   client.login(DEV_TOKEN).catch(() => {
     console.error(
-      "❌ Failed to login to Discord. Please check your DEV_DISCORD_TOKEN."
+      "❌ Failed to login to Discord. Please check your DEV_DISCORD_TOKEN.",
     );
     process.exit(1);
   });
@@ -184,18 +187,32 @@ if (isDevelopment) {
   console.log("🚀 Starting in production mode...");
   client.login(CONFIG.secrets.token).catch(() => {
     console.error(
-      "❌ Failed to login to Discord. Please check your DISCORD_TOKEN."
+      "❌ Failed to login to Discord. Please check your DISCORD_TOKEN.",
     );
     process.exit(1);
   });
 }
 
-// graceful shutdown
-process.on("SIGINT", async () => {
-  console.log("Received SIGINT, shutting down...");
-  await client.destroy();
+// graceful shutdown — SIGINT (Ctrl-C) and SIGTERM (docker/systemd stop)
+let shuttingDown = false;
+async function shutdown(signal: string) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`Received ${signal}, shutting down...`);
+  try {
+    await client.destroy();
+  } catch (e) {
+    console.error("Error destroying client:", e);
+  }
+  try {
+    await closeDb();
+  } catch (e) {
+    console.error("Error closing DB:", e);
+  }
   process.exit(0);
-});
+}
+process.on("SIGINT", () => void shutdown("SIGINT"));
+process.on("SIGTERM", () => void shutdown("SIGTERM"));
 
 // on unhandled rejections
 process.on("unhandledRejection", (reason, promise) => {

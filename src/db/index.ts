@@ -1,15 +1,14 @@
-import { open, Database } from 'sqlite';
-import sqlite3 from 'sqlite3';
-import fs from 'fs';
-import path from 'path';
-import { time } from 'console';
-import { date } from 'zod';
+import { open, Database } from "sqlite";
+import sqlite3 from "sqlite3";
+import fs from "fs";
+import path from "path";
 
 export type Sqlite = Database<sqlite3.Database, sqlite3.Statement>;
 let _db: Sqlite | null = null;
 
-const DEFAULT_DB = process.env.DB_FILE || path.resolve(process.cwd(), 'data/remnant.sqlite');
-const FUND_ID = process.env.GUILD_FUND_ID || 'sys:fund:remnant';
+const DEFAULT_DB =
+  process.env.DB_FILE || path.resolve(process.cwd(), "data/remnant.sqlite");
+const FUND_ID = process.env.GUILD_FUND_ID || "sys:fund:remnant";
 
 export async function initDb(dbFile = DEFAULT_DB) {
   fs.mkdirSync(path.dirname(dbFile), { recursive: true });
@@ -35,7 +34,6 @@ export async function initDb(dbFile = DEFAULT_DB) {
     );
   `);
 
-  
   // LFG presence tracking (table + index) [deprecated]
   // await db.exec(`
   //   CREATE TABLE IF NOT EXISTS lfg_presence (
@@ -49,8 +47,9 @@ export async function initDb(dbFile = DEFAULT_DB) {
   //   CREATE INDEX IF NOT EXISTS idx_lfg_guild_tier ON lfg_presence (guildId, tier, since);
   // `);
   // drop above table since we've got a better LFG table and make sure indexes are gone
-  await db.exec(`DROP TABLE IF EXISTS lfg_presence; DROP INDEX IF EXISTS idx_lfg_guild_tier;`);
-
+  await db.exec(
+    `DROP TABLE IF EXISTS lfg_presence; DROP INDEX IF EXISTS idx_lfg_guild_tier;`,
+  );
 
   // New LFG status table + guild state table
   await db.exec(`
@@ -76,20 +75,18 @@ export async function initDb(dbFile = DEFAULT_DB) {
       PRIMARY KEY (guildId, key)
     );
 
-      `)
+      `);
 
-  
   // create the fund row if missing
   await db.run(
     `INSERT INTO charlog (userId, name, level, xp, cp, tp, active)
      VALUES (?, 'Adventurers Guild Fund', 20, 305000, 500000, 0, true)
      ON CONFLICT(userId,name) DO NOTHING`,
-    FUND_ID
+    FUND_ID,
   );
 
-
   _db = db;
-    console.log(`📂 Database initialized: ${dbFile}`);
+  console.log(`📂 Database initialized: ${dbFile}`);
   return db;
 }
 
@@ -105,28 +102,43 @@ export async function migrateDb(dbFile = DEFAULT_DB) {
   `);
 
   // add COLUMN active to charlog
-  const migrate_check1 = await db.get(`SELECT * FROM pragma_table_info('charlog') WHERE name = 'active';`);
-  if (!migrate_check1) {await db.exec(`
+  const migrate_check1 = await db.get(
+    `SELECT * FROM pragma_table_info('charlog') WHERE name = 'active';`,
+  );
+  if (!migrate_check1) {
+    await db.exec(`
     ALTER TABLE charlog
     ADD COLUMN active BOOLEAN NOT NULL DEFAULT 1;
-  `);}
+  `);
+  }
   // add COLUMN dtp to charlog
-  const migrate_check2 = await db.get(`SELECT * FROM pragma_table_info('charlog') WHERE name = 'dtp';`);
-  if (!migrate_check2) {await db.exec(`
+  const migrate_check2 = await db.get(
+    `SELECT * FROM pragma_table_info('charlog') WHERE name = 'dtp';`,
+  );
+  if (!migrate_check2) {
+    await db.exec(`
     ALTER TABLE charlog
     ADD COLUMN dtp INTEGER NOT NULL DEFAULT 0;
-  `);}
+  `);
+  }
   // add COLUMN dtp_updated to charlog
-  const migrate_check3 = await db.get(`SELECT * FROM pragma_table_info('charlog') WHERE name = 'dtp_updated';`);
-  const timestamp = new Date().getTime() / 1000
-  const timestampNormal = timestamp - (timestamp % 86400)
-  if (!migrate_check3) {await db.exec(`
+  const migrate_check3 = await db.get(
+    `SELECT * FROM pragma_table_info('charlog') WHERE name = 'dtp_updated';`,
+  );
+  const timestamp = new Date().getTime() / 1000;
+  const timestampNormal = timestamp - (timestamp % 86400);
+  if (!migrate_check3) {
+    await db.exec(`
     ALTER TABLE charlog
-    ADD COLUMN dtp_updated INTEGER NOT NULL DEFAULT ${ timestampNormal };
-  `);}
+    ADD COLUMN dtp_updated INTEGER NOT NULL DEFAULT ${timestampNormal};
+  `);
+  }
   // add library table
-  const migrate_check4 = await db.get(`SELECT * FROM pragma_table_info('library') WHERE name = 'title';`);
-  if (!migrate_check4) {await db.exec(`
+  const migrate_check4 = await db.get(
+    `SELECT * FROM pragma_table_info('library') WHERE name = 'title';`,
+  );
+  if (!migrate_check4) {
+    await db.exec(`
     PRAGMA journal_mode = WAL;
     PRAGMA synchronous = NORMAL;
     PRAGMA foreign_keys = ON;
@@ -139,19 +151,32 @@ export async function migrateDb(dbFile = DEFAULT_DB) {
       content  TEXT NOT NULL,
       PRIMARY KEY (title)
     );
-  `);}
+  `);
+  }
   // add COLUMN cc to charlog
-  const migrate_check5 = await db.get(`SELECT * FROM pragma_table_info('charlog') WHERE name = 'cc';`);
-  if (!migrate_check5) {await db.exec(`
+  const migrate_check5 = await db.get(
+    `SELECT * FROM pragma_table_info('charlog') WHERE name = 'cc';`,
+  );
+  if (!migrate_check5) {
+    await db.exec(`
     ALTER TABLE charlog
     ADD COLUMN cc INTEGER NOT NULL DEFAULT 0;
-  `);}
+  `);
+  }
 
   console.log(`📂 Database migrations done: ${dbFile}`);
   return db;
 }
 
 export function getDb(): Sqlite {
-  if (!_db) throw new Error('DB not initialized — call initDb() before using getDb()');
+  if (!_db)
+    throw new Error("DB not initialized — call initDb() before using getDb()");
   return _db;
+}
+
+export async function closeDb(): Promise<void> {
+  if (_db) {
+    await _db.close();
+    _db = null;
+  }
 }
