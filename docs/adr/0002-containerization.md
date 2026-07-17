@@ -70,7 +70,7 @@ Ship Quil as a Docker image and run it via `docker compose`.
 
 Not decided here — the deploy box is **not** the current dev box and its details are
 unknown. This ADR deliberately stops at "a published image + compose." A future
-ADR-0003 will choose a CD mechanism once we know, for the deploy box:
+ADR will choose a CD mechanism once we know, for the deploy box:
 
 - OS / arch / Docker (and compose) version present;
 - inbound access (SSH reachable? behind NAT? pull-only?);

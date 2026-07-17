@@ -51,14 +51,14 @@ you touch logic.
 
 ## Phase 3 — Dead code & duplication
 
-- [ ] `ARCH-1` delete/adopt `feature-registry.ts` (ADR the command-loading strategy)
-- [ ] `ARCH-2` delete/migrate `features/lfg/repo.ts`
-- [ ] `DEP-1` remove `better-sqlite3` (or schedule migration — its own ADR)
-- [ ] `DEP-2` `npm audit fix` (non-breaking) + retest
-- [ ] `ARCH-3` extract `utils/perms.ts`, `utils/money.ts`, `utils/guards.ts`
-- [ ] `ARCH-5` extract `safeReplyError` in `bot.ts`
-- [ ] `QUAL-5` remove dead imports/types; fix xp.ts import mutation
-- **Exit:** No dead modules; guards/money helpers have one home.
+- [x] `ARCH-1` deleted `feature-registry.ts`; standardized on the flat auto-loader — documented in `docs/adr/0003-command-loading.md`.
+- [x] `ARCH-2` deleted `features/lfg/repo.ts` (queried the dropped `lfg_presence` table; no importers).
+- [x] `DEP-1` removed unused `better-sqlite3`; updated the migration-doc inspection snippet to the `sqlite3` CLI.
+- [x] `DEP-2` `npm audit fix` (non-breaking): **20 → 7** advisories. Remaining 7 are the `sqlite3`→`node-gyp`→`tar`/`cacache` chain, only fixable via `sqlite3@6` (breaking) — left for the DEP-1-migration ADR decision.
+- [~] `ARCH-3` extracted `src/utils/money.ts` (`toCp`/`toGp`, adopted in buy/sell/resource) and consolidated perms — `lfg.ts`/`rewards.ts` now use `validaters.ts` (`hasAnyRole`/`isAdmin`/`canBypass`), which also unified rewards' stray `DEV_SUPERUSERS` onto the validated `SUPERUSER_IDS`. **Deferred:** `announceLevelChange` dedup (two genuinely different signatures in `xp.ts` vs `rewards.ts` — a behavior-risky merge, Phase 4). Channel/mod-perm guard extraction also left for Phase 4 (small, per-command).
+- [x] `ARCH-5` extracted `safeReplyError()` in `bot.ts` (3 duplicated blocks → 1).
+- [x] `QUAL-5` `xp.ts` no longer mutates the imported JSON (sorts a copy); removed unused `FeaturePrereqs`. (`time`/`date` dead imports removed in Phase 1; duplicate `resourceMapping` in Phase 0.)
+- **Exit ✅ (mostly):** dead modules gone; money/perms have one home. lint + typecheck + 65 tests green; all 15 command modules import cleanly. `announceLevelChange` + guard extraction carried to Phase 4.
 
 ## Phase 4 — Correctness polish & size
 

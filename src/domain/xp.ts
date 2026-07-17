@@ -9,12 +9,15 @@ export type AdvancementTable = {
   maxLevel: number;
 };
 
-const table = advancement as AdvancementTable;
+const raw = advancement as AdvancementTable;
 const CFG = CONFIG.guild!.config;
 const REWARDS_CHANNEL_ID = CFG.channels?.resourceTracking || null;
 
-// Sanity: ensure levels sorted ascending by XP and level
-table.levels.sort((a, b) => a.xp - b.xp);
+// Work on a sorted COPY — never mutate the imported JSON module.
+const table: AdvancementTable = {
+  ...raw,
+  levels: [...raw.levels].sort((a, b) => a.xp - b.xp),
+};
 
 /** Minimum XP required to be at `level`. Clamped to table range. */
 export function xpNeededFor(level: number): number {
@@ -32,7 +35,9 @@ export function proficiencyFor(level: number): number {
 export function levelForXP(totalXP: number): number {
   const xp = Math.max(0, Math.floor(totalXP));
   // last level whose floor XP <= xp
-  let lo = 0, hi = table.levels.length - 1, ans = 1;
+  let lo = 0,
+    hi = table.levels.length - 1,
+    ans = 1;
   while (lo <= hi) {
     const mid = (lo + hi) >> 1;
     if (table.levels[mid]!.xp <= xp) {
@@ -54,14 +59,14 @@ export function bandFor(level: number): { curr: number; next: number | null } {
 }
 
 export type PlayerProgress = {
-  xp: number;          // absolute xp total
-  level: number;       // cached level (optional to trust)
+  xp: number; // absolute xp total
+  level: number; // cached level (optional to trust)
 };
 
 /** Apply XP delta and auto-level (up or down). Returns new snapshot + level change. */
 export function applyXP(
   prev: PlayerProgress,
-  delta: number
+  delta: number,
 ): PlayerProgress & { levelsChanged: number; proficiency: number } {
   // clamp XP >= 0; cap effective level to maxLevel rules
   const newXP = Math.max(0, Math.floor(prev.xp + Math.floor(delta)));
@@ -85,17 +90,25 @@ export async function announceLevelChange(
   displayName: string,
   newLevel: number,
   diff: number,
-  newProf: number
+  newProf: number,
 ) {
-  const msg = diff > 0  ? t('xp.announce.levelUp', { display: displayName, level: newLevel, prof: newProf }) 
-                        : t('xp.announce.levelDown', { display: displayName, level: newLevel });
+  const msg =
+    diff > 0
+      ? t("xp.announce.levelUp", {
+          display: displayName,
+          level: newLevel,
+          prof: newProf,
+        })
+      : t("xp.announce.levelDown", { display: displayName, level: newLevel });
 
   const guild = ix.guild;
   const target =
-    (guild && REWARDS_CHANNEL_ID && guild.channels.cache.get(REWARDS_CHANNEL_ID)) ||
+    (guild &&
+      REWARDS_CHANNEL_ID &&
+      guild.channels.cache.get(REWARDS_CHANNEL_ID)) ||
     ix.channel;
 
-  console.log(msg)
+  console.log(msg);
   // @ts-expect-error (text channel narrowing omitted)
   await target?.send(msg);
 }

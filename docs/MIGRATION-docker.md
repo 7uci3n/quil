@@ -53,16 +53,13 @@ docker compose run --rm register
 
 ## Verify the data came across
 
-```bash
-# Character count and a spot check, using the running container:
-docker compose exec quil node -e "const D=require('better-sqlite3'); \
-const db=new D('data/remnant.sqlite'); \
-console.log('characters:', db.prepare('SELECT COUNT(*) n FROM charlog').get().n); \
-console.log(db.prepare('SELECT userId,name,level,cp,cc FROM charlog LIMIT 5').all());"
-```
+Because `./data` is a bind mount, inspect the file directly on the host with the
+`sqlite3` CLI (install with `apt install sqlite3` if missing):
 
-(`better-sqlite3` is present in the image only as an incidental dependency — handy
-for read-only inspection. The app itself uses the `sqlite3` driver.)
+```bash
+sqlite3 data/remnant.sqlite "SELECT COUNT(*) AS characters FROM charlog;"
+sqlite3 data/remnant.sqlite "SELECT userId, name, level, cp, cc FROM charlog LIMIT 5;"
+```
 
 ## Rollback
 

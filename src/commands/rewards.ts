@@ -4,12 +4,12 @@ import {
   SlashCommandBuilder,
   EmbedBuilder,
   GuildMember,
-  PermissionFlagsBits,
   userMention,
   MessageFlags,
 } from "discord.js";
 
 import { CONFIG } from "../config/resolved.js";
+import { canBypass } from "../config/validaters.js";
 import {
   adjustResource,
   getPlayer,
@@ -45,29 +45,6 @@ const PERMS = {
 };
 
 const REWARDS_CHANNEL_ID = CFG.channels?.resourceTracking;
-
-function hasAnyRole(member: GuildMember | null, allowed: string[]) {
-  if (!member || !allowed?.length) return false;
-  const have = new Set(member.roles.cache.map((r) => r.id));
-  return allowed.some((rid) => have.has(rid));
-}
-
-function isAdmin(member: GuildMember | null) {
-  try {
-    return !!member?.permissions?.has?.(PermissionFlagsBits.Administrator);
-  } catch {
-    return false;
-  }
-}
-
-// Optional dev bypass while testing
-const SUPERUSER_IDS = (process.env.DEV_SUPERUSERS ?? "")
-  .split(",")
-  .map((s) => s.trim())
-  .filter(Boolean);
-function isDevBypass(ix: ChatInputCommandInteraction) {
-  return CONFIG.env !== "prod" && SUPERUSER_IDS.includes(ix.user.id);
-}
 
 /* ──────────────────────────────────────────────────────────────────────────────
    SLASH COMMAND DEFINITION
@@ -170,13 +147,11 @@ export async function execute(ix: ChatInputCommandInteraction) {
   const member = ix.member as GuildMember | null;
 
   // Permissions
-  const allowed =
-    hasAnyRole(
-      member,
-      PERMS[sub].filter((id): id is string => id !== undefined),
-    ) ||
-    isAdmin(member) ||
-    isDevBypass(ix);
+  const allowed = canBypass(
+    ix,
+    member,
+    PERMS[sub].filter((id): id is string => id !== undefined),
+  );
 
   if (!allowed) {
     await ix.reply({

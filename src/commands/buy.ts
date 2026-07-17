@@ -8,15 +8,13 @@ import { CONFIG } from "../config/resolved.js";
 import { t } from "../lib/i18n.js";
 import { getPlayer, spendResources } from "../utils/db_queries.js";
 import { updateDTP } from "../domain/resource.js";
+import { toCp, toGp } from "../utils/money.js";
 
 const CFG = CONFIG.guild!.config;
 const RESOURCE_CHANNEL_ID = CFG.channels?.resourceTracking || null;
 const DTP_CHANNEL_ID = CFG.channels?.dtpTracking || null;
 const MAGIC_ITEMS_CHANNEL_ID = CFG.channels?.magicItems || null;
 const CC_CHANNEL_ID = CFG.channels?.crewCoins || null;
-// helpers
-const toCp = (gp: number) => Math.round(gp * 100);
-const toGp = (cp: number) => (cp / 100).toFixed(2);
 
 export const data = new SlashCommandBuilder()
   .setName("buy")

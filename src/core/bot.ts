@@ -6,6 +6,7 @@ import {
   SlashCommandBuilder,
   ChatInputCommandInteraction,
   MessageFlags,
+  type RepliableInteraction,
 } from "discord.js";
 
 import * as fsSync from "node:fs";
@@ -32,6 +33,18 @@ type CommandModule = {
 };
 
 const commands = new Map<string, CommandModule>();
+
+// Single place for ephemeral error replies (followUp if already responded).
+async function safeReplyError(
+  interaction: RepliableInteraction,
+  content: string,
+) {
+  if (interaction.deferred || interaction.replied) {
+    await interaction.followUp({ content, flags: MessageFlags.Ephemeral });
+  } else {
+    await interaction.reply({ content, flags: MessageFlags.Ephemeral });
+  }
+}
 
 // dynamically load commands from the commands directory
 async function loadCommands() {
@@ -98,37 +111,21 @@ client.on(Events.InteractionCreate, async (interaction) => {
   if (interaction.isChatInputCommand()) {
     const mod = commands.get(interaction.commandName);
     if (!mod?.execute) {
-      const msg = t("errors.generic") || "Command not found."; // should never happen
-      if (interaction.deferred || interaction.replied) {
-        await interaction.followUp({
-          content: msg,
-          flags: MessageFlags.Ephemeral,
-        });
-      } else {
-        await interaction.reply({
-          content: msg,
-          flags: MessageFlags.Ephemeral,
-        });
-      }
-      return; // rather not deal with it past this point.
+      // should never happen
+      await safeReplyError(
+        interaction,
+        t("errors.generic") || "Command not found.",
+      );
+      return;
     }
     try {
       await mod.execute(interaction);
     } catch (err) {
       console.error(`[/${interaction.commandName}]`, err);
-      const msg =
-        t("errors.generic") || "An error occurred while executing the command.";
-      if (interaction.deferred || interaction.replied) {
-        await interaction.followUp({
-          content: msg,
-          flags: MessageFlags.Ephemeral,
-        });
-      } else {
-        await interaction.reply({
-          content: msg,
-          flags: MessageFlags.Ephemeral,
-        });
-      }
+      await safeReplyError(
+        interaction,
+        t("errors.generic") || "An error occurred while executing the command.",
+      );
     }
     return;
   }
@@ -144,20 +141,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
         await retire.handleModal(interaction);
       } catch (err) {
         console.error("[Retire Modal]", err);
-        const msg =
+        await safeReplyError(
+          interaction,
           t("errors.generic") ||
-          "An error occurred while processing the modal.";
-        if (interaction.deferred || interaction.replied) {
-          await interaction.followUp({
-            content: msg,
-            flags: MessageFlags.Ephemeral,
-          });
-        } else {
-          await interaction.reply({
-            content: msg,
-            flags: MessageFlags.Ephemeral,
-          });
-        }
+            "An error occurred while processing the modal.",
+        );
       }
     }
   }

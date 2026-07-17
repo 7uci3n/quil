@@ -19,6 +19,7 @@ import {
   levelForXP,
   proficiencyFor,
 } from "../domain/xp.js";
+import { toCp, toGp } from "../utils/money.js";
 
 const CFG = CONFIG.guild!.config;
 const ROLE = CFG.roles;
@@ -32,8 +33,6 @@ const PERMS = {
   set: [ROLE.admin.id].filter(Boolean) as string[],
   show: [] as string[],
 };
-const toCp = (gp: number) => Math.round(gp * 100);
-const toGp = (cp: number) => (cp / 100).toFixed(2);
 const resourceMapping: { [id: string]: [string, string] } = {
   cp: ["GP", "💰"],
   tp: ["GT", "🎫"],
