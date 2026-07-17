@@ -1,5 +1,4 @@
 // src/commands/lfg.ts
-import { log } from "../lib/log.js";
 import {
   ChatInputCommandInteraction,
   SlashCommandBuilder,
@@ -30,7 +29,13 @@ import {
   type LfgTier,
   ORDER as LFG_ORDER,
 } from "../domain/lfg.js";
-import { getGuildState, setGuildState } from "../domain/guildState.js";
+import {
+  LFG_BASE_ROLE_ID,
+  LFG_TIER_ROLE_IDS,
+  removeRoleById,
+  syncRolesFor,
+} from "../features/lfg/roles.js";
+import { refreshBoard } from "../features/lfg/board.js";
 import { levelForXP } from "../domain/xp.js";
 import { t } from "../lib/i18n.js";
 
@@ -39,16 +44,6 @@ import { t } from "../lib/i18n.js";
 ────────────────────────────────────────────────────────────────────────────── */
 const CFG = CONFIG.guild!.config;
 const ROLES = CFG.roles;
-const LFG_FEATURE = CFG.features?.lfg;
-const LFG_BASE_ROLE_ID = LFG_FEATURE?.roles?.lfg;
-const LFG_TIER_ROLE_IDS: Record<LfgTier, string | undefined> = {
-  low: LFG_FEATURE?.tiers?.low,
-  mid: LFG_FEATURE?.tiers?.mid,
-  high: LFG_FEATURE?.tiers?.high,
-  epic: LFG_FEATURE?.tiers?.epic,
-  pbp: LFG_FEATURE?.tiers?.pbp,
-};
-const LFG_BOARD_CHANNEL_ID = LFG_FEATURE?.channels?.board;
 
 const PERMS = {
   // who can toggle/add/remove for themselves: everyone (we’ll only gate purge & post)
@@ -68,76 +63,6 @@ async function getCharlogXPName(
     userId,
   );
   return row ?? null;
-}
-
-/* ──────────────────────────────────────────────────────────────────────────────
-  ROLE SYNC
-────────────────────────────────────────────────────────────────────────────── */
-async function addRoleById(member: GuildMember, roleId?: string | null) {
-  if (!roleId) return;
-  if (member.roles.cache.has(roleId)) return;
-  await member.roles.add(roleId).catch(() => {});
-}
-async function removeRoleById(member: GuildMember, roleId?: string | null) {
-  if (!roleId) return;
-  if (!member.roles.cache.has(roleId)) return;
-  await member.roles.remove(roleId).catch(() => {});
-}
-
-async function syncRolesFor(member: GuildMember, entry: LfgEntry) {
-  // Base LFG role
-  if (anyTierOn(entry)) {
-    await addRoleById(member, LFG_BASE_ROLE_ID);
-  } else {
-    await removeRoleById(member, LFG_BASE_ROLE_ID);
-  }
-  // Tier roles
-  const shouldHave: Array<[LfgTier, boolean]> = [
-    ["low", !!entry.low],
-    ["mid", !!entry.mid],
-    ["high", !!entry.high],
-    ["epic", !!entry.epic],
-    ["pbp", !!entry.pbp],
-  ];
-  for (const [tier, on] of shouldHave) {
-    const rid = LFG_TIER_ROLE_IDS[tier];
-    if (on) await addRoleById(member, rid);
-    else await removeRoleById(member, rid);
-  }
-}
-
-/* ──────────────────────────────────────────────────────────────────────────────
-  BOARD REFRESH
-────────────────────────────────────────────────────────────────────────────── */
-const BOARD_KEY = "lfg_board_message_id";
-
-async function refreshBoard(ix: ChatInputCommandInteraction, reason?: string) {
-  if (!ix.guild) return;
-  const guildId = ix.guild.id;
-  const entries = await listAllLfg(guildId);
-  const embed = buildLfgEmbed(aggregateList(entries));
-
-  // If no channel configured, just bail silently.
-  const boardChanId = LFG_BOARD_CHANNEL_ID;
-  if (!boardChanId) return;
-
-  // Try to edit the sticky message; else send new and store id.
-  const chan = ix.guild.channels.cache.get(boardChanId);
-  if (!chan || !("send" in chan)) return;
-
-  const existingId = await getGuildState(guildId, BOARD_KEY);
-  if (existingId) {
-    try {
-      const msg = await chan.messages.fetch(existingId);
-      await msg.edit({ embeds: [embed] });
-      return;
-    } catch {
-      // falls through to create new
-    }
-  }
-  const sent = await chan.send({ embeds: [embed] });
-  log.info(`LFG: Posted new board message (${reason ?? "auto"})`);
-  await setGuildState(guildId, BOARD_KEY, sent.id);
 }
 
 /* ──────────────────────────────────────────────────────────────────────────────
