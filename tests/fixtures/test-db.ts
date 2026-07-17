@@ -1,66 +1,25 @@
-// Test database utilities
-import { open } from "sqlite";
-import sqlite3 from "sqlite3";
+// Test database utilities.
+// Build the schema via the REAL init + migrate path (on a temp file) so it can
+// never drift from production, and wire getDb() so the production db_queries /
+// db/lfg functions operate against this database.
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import type { Sqlite } from "../../src/db/index.js";
+import { initDb, migrateDb, getDb, closeDb } from "../../src/db/index.js";
+
+let currentFile: string | null = null;
 
 export async function createTestDb(): Promise<Sqlite> {
-  // Use in-memory database for tests
-  const db = await open({
-    filename: ":memory:",
-    driver: sqlite3.Database,
-  });
-
-  // Initialize schema (copied from src/db/index.ts initDb)
-  await db.exec(`
-    PRAGMA journal_mode = WAL;
-    PRAGMA synchronous = NORMAL;
-    PRAGMA foreign_keys = ON;
-    PRAGMA busy_timeout = 5000;
-    PRAGMA wal_autocheckpoint = 1000;
-
-    CREATE TABLE IF NOT EXISTS charlog (
-      userId TEXT,
-      name   TEXT NOT NULL,
-      level  INTEGER NOT NULL,
-      xp     INTEGER NOT NULL,
-      cp     INTEGER NOT NULL,
-      tp     INTEGER NOT NULL,
-      dtp    INTEGER NOT NULL DEFAULT 0,
-      dtp_updated INTEGER NOT NULL DEFAULT 0,
-      cc     INTEGER NOT NULL DEFAULT 0,
-      active BOOL NOT NULL,
-      PRIMARY KEY (userId, name)
-    );
-
-    CREATE TABLE IF NOT EXISTS lfg_status (
-      userId    TEXT PRIMARY KEY,
-      guildId   TEXT NOT NULL,
-      name      TEXT NOT NULL,
-      startedAt INTEGER NOT NULL,
-      low       INTEGER NOT NULL DEFAULT 0,
-      mid       INTEGER NOT NULL DEFAULT 0,
-      high      INTEGER NOT NULL DEFAULT 0,
-      epic      INTEGER NOT NULL DEFAULT 0,
-      pbp       INTEGER NOT NULL DEFAULT 0,
-      updatedAt INTEGER NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS guild_state (
-      guildId TEXT NOT NULL,
-      key     TEXT NOT NULL,
-      value   TEXT NOT NULL,
-      PRIMARY KEY (guildId, key)
-    );
-
-    CREATE TABLE IF NOT EXISTS library (
-      title TEXT,
-      genre   TEXT NOT NULL,
-      content  TEXT NOT NULL,
-      PRIMARY KEY (title)
-    );
-  `);
-
-  return db;
+  // Temp file (not :memory:) so init and migrate share one database.
+  currentFile = path.join(
+    os.tmpdir(),
+    `quil-test-${process.hrtime.bigint()}.sqlite`,
+  );
+  await initDb(currentFile);
+  const migrated = await migrateDb(currentFile);
+  await migrated.close();
+  return getDb();
 }
 
 export async function seedTestPlayer(
@@ -73,13 +32,14 @@ export async function seedTestPlayer(
     cp?: number;
     tp?: number;
     dtp?: number;
+    dtp_updated?: number;
     cc?: number;
     active?: boolean;
   },
 ) {
   await db.run(
-    `INSERT INTO charlog (userId, name, level, xp, cp, tp, dtp, cc, active)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO charlog (userId, name, level, xp, cp, tp, dtp, dtp_updated, cc, active)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     data.userId,
     data.name,
     data.level ?? 1,
@@ -87,11 +47,22 @@ export async function seedTestPlayer(
     data.cp ?? 0,
     data.tp ?? 0,
     data.dtp ?? 0,
+    data.dtp_updated ?? 0,
     data.cc ?? 0,
     data.active ? 1 : 0,
   );
 }
 
-export async function cleanupTestDb(db: Sqlite) {
-  await db.close();
+export async function cleanupTestDb(_db?: Sqlite) {
+  await closeDb();
+  if (currentFile) {
+    for (const suffix of ["", "-wal", "-shm"]) {
+      try {
+        fs.unlinkSync(currentFile + suffix);
+      } catch {
+        /* ignore */
+      }
+    }
+    currentFile = null;
+  }
 }

@@ -499,8 +499,8 @@ async function handleList(ix: ChatInputCommandInteraction) {
   const entries = await listAllLfg(ix.guild!.id);
   const embed = buildLfgEmbed(aggregateList(entries));
 
-  // Always show a preview ephemerally
-  await ix.reply({ embeds: [embed] });
+  // Always show a preview ephemerally (public board goes out only if `post`)
+  await ix.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 
   if (!post) return;
 

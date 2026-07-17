@@ -1,16 +1,18 @@
-import { open } from 'sqlite';
-import sqlite3 from 'sqlite3';
-import fs from 'fs';
-import path from 'path';
+import { open } from "sqlite";
+import sqlite3 from "sqlite3";
+import fs from "fs";
+import path from "path";
 
-const DB_FILE = process.env.DB_FILE || './data/remnant.sqlite';
-const BACKUP_DIR = process.env.BACKUP_DIR || '../bissel-modern-backup/backups';
+const DB_FILE = process.env.DB_FILE || "./data/remnant.sqlite";
+const BACKUP_DIR = process.env.BACKUP_DIR || "./backups";
 const RETAIN_DAYS = Number(process.env.BACKUP_RETAIN_DAYS ?? 14);
 
 function stamp() {
   const d = new Date();
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const ms = String(d.getMilliseconds()).padStart(3, "0");
+  // millisecond suffix so two backups in the same second don't collide
+  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}.${ms}`;
 }
 
 async function main() {
@@ -31,9 +33,10 @@ async function main() {
 
   // Retention cleanup
   const cutoff = Date.now() - RETAIN_DAYS * 24 * 60 * 60 * 1000;
-  const files = fs.readdirSync(BACKUP_DIR)
-    .filter(f => f.endsWith('.sqlite'))
-    .map(f => path.join(BACKUP_DIR, f));
+  const files = fs
+    .readdirSync(BACKUP_DIR)
+    .filter((f) => f.endsWith(".sqlite"))
+    .map((f) => path.join(BACKUP_DIR, f));
 
   for (const f of files) {
     const s = fs.statSync(f);
@@ -44,4 +47,7 @@ async function main() {
   }
 }
 
-main().catch(err => { console.error('[backup] failed:', err); process.exit(1); });
+main().catch((err) => {
+  console.error("[backup] failed:", err);
+  process.exit(1);
+});

@@ -21,8 +21,8 @@ Requirements
 - npm v9+
 
 ```powershell
-git clone https://github.com/donovan-townes/bissel-modern.git
-cd bissel-modern
+git clone https://github.com/7uci3n/quil.git
+cd quil
 # use npm ci for reproducible installs on CI/servers
 npm ci
 

@@ -1,4 +1,4 @@
-# bissel-modern Runbook
+# Quil Runbook
 
 Operational notes and developer guide for working on the bot.
 
@@ -76,9 +76,9 @@ Expected output:
 6. Restart the bot process:
 
    ```bash
-   pm2 restart bissel-modern
+   pm2 restart quil
    # or
-   systemctl restart bissel-modern
+   systemctl restart quil
    ```
 
 ---

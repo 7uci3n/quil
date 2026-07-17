@@ -78,13 +78,14 @@ you touch logic.
 
 ## Phase 5 — Tests & docs
 
-- [ ] `TEST-1` rewrite integration tests to drive real code
-- [ ] `TEST-3` reuse `initDb`/`migrateDb` in the fixture
-- [ ] `TEST-2` handler tests via the mocks (or remove them)
-- [ ] Fill coverage gaps top-down (resource DTP, `db_queries`, money commands); raise thresholds
-- [ ] `DOC-1`/`DOC-2`/`DOC-4` rebrand bissel-modern → Quil
-- [ ] `DOC-3` fix ADR/CLAUDE.md DB lib _(done at audit delivery)_
-- [ ] `DOC-5`/`DOC-6`/`DOC-7` typos, script de-dupe, retire `TODO.md`
+- [x] `TEST-1` integration tests rewritten to drive REAL code — `character-lifecycle` now exercises `adjustResource`/`getPlayerCC`/`retireCharacter`/`updateDTP`; `lfg-workflow` uses the real `db/lfg` functions (upsert/list/purge). No more inline-SQL false confidence.
+- [x] `TEST-3` fixture (`test-db.ts`) builds the schema via the real `initDb`+`migrateDb` (temp file) and wires `getDb()` — can't drift from production.
+- [x] `TEST-2` removed the dead `mock-interactions.ts` (0 importers).
+- [x] Coverage: added real-code coverage; whole-`src` **3.6% → 17.2%** lines (`db_queries` ~70%). Thresholds raised to 15/9/18/16 and enforced in CI.
+- [x] `DOC-1`/`DOC-2`/`DOC-4` rebranded bissel-modern → Quil (README clone URL, RUNBOOK, backup dir).
+- [x] `DOC-3` ADR/CLAUDE.md DB lib (done at audit delivery).
+- [x] `DOC-5` `/lfg` preview now actually ephemeral (matched the comment); `DOC-6` de-duped `deploy:list`, removed the non-functional `deploy:global`; `DOC-7` deleted stray `TODO.md`. (Earlier: swap header + sync/app.config typos fixed in Phases 1/3.)
+- **Exit ✅:** tests drive real code; fixture can't drift; coverage measured + enforced (ratcheted); docs describe Quil. lint + typecheck + 61 tests green.
 
 ---
 

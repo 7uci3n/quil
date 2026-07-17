@@ -19,14 +19,14 @@ export default defineConfig({
         "**/*.config.ts",
         "src/scripts/**",
       ],
-      // Honest whole-src floor. Currently ~3.6% — most of src is untested
-      // (see docs/audit TEST-1). Ratchet these UP as coverage is added in
-      // later audit phases; never lower them.
+      // Honest whole-src floor, ratcheted up as real-code tests landed
+      // (Phase 5: ~17% lines; db_queries ~70%). Raise these as coverage grows;
+      // never lower them.
       thresholds: {
-        statements: 3,
-        branches: 1,
-        functions: 3,
-        lines: 3,
+        statements: 15,
+        branches: 9,
+        functions: 18,
+        lines: 16,
       },
     },
   },
