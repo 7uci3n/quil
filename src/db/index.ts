@@ -1,3 +1,4 @@
+import { log } from "../lib/log.js";
 import { open, Database } from "sqlite";
 import sqlite3 from "sqlite3";
 import fs from "fs";
@@ -88,7 +89,7 @@ export async function initDb(dbFile = DEFAULT_DB) {
   );
 
   _db = db;
-  console.log(`📂 Database initialized: ${dbFile}`);
+  log.info(`📂 Database initialized: ${dbFile}`);
   return db;
 }
 
@@ -179,7 +180,7 @@ export async function migrateDb(dbFile = DEFAULT_DB) {
      ON charlog (userId) WHERE active = 1;`,
   );
 
-  console.log(`📂 Database migrations done: ${dbFile}`);
+  log.info(`📂 Database migrations done: ${dbFile}`);
   return db;
 }
 

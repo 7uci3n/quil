@@ -1,16 +1,17 @@
+import { log } from "../lib/log.js";
 import { initDb } from "../db/index.js";
-console.log("🏃‍♂️ Initializing DB...");
+log.info("🏃‍♂️ Initializing DB...");
 
 initDb()
   .then((db) => {
-    console.log("✅ Initialization completed successfully");
+    log.info("✅ Initialization completed successfully");
     return db.close();
   })
   .then(() => {
-    console.log("📂 Database connection closed");
+    log.info("📂 Database connection closed");
     process.exit(0);
   })
   .catch((err) => {
-    console.error("❌ Initialization failed:", err);
+    log.error("❌ Initialization failed:", err);
     process.exit(1);
   });

@@ -1,5 +1,6 @@
-import axios from 'axios';
-import { parse } from 'csv-parse/sync';
+import { log } from "../lib/log.js";
+import axios from "axios";
+import { parse } from "csv-parse/sync";
 
 // --- Interfaces ---
 
@@ -17,7 +18,7 @@ interface LootTable {
 
 // --- Constants ---
 
-const SHEET_ID = '14abo_G31jrALQvm9Jy4WfcYFozfG9SknekJs7iJJTp0';
+const SHEET_ID = "14abo_G31jrALQvm9Jy4WfcYFozfG9SknekJs7iJJTp0";
 // We use the export endpoint to get raw CSV data
 const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
 
@@ -44,8 +45,8 @@ export class LootService {
 
       for (const row of rows) {
         // Ensure we only use Column A (index 0) and Column B (index 1)
-        const colA = row[0]?.trim() || '';
-        const colB = row[1]?.trim() || '';
+        const colA = row[0]?.trim() || "";
+        const colB = row[1]?.trim() || "";
 
         // Attempt to parse a dice range from Column A
         const range = this.parseRange(colA);
@@ -64,10 +65,13 @@ export class LootService {
           // Heuristic: If A or B contains text but isn't a range, we treat it as a new table start.
           // We ignore empty rows or purely metadata rows based on the prompt instructions,
           // but we must detect headers to group items.
-          
+
           const potentialName = colA;
-          
-          if (potentialName && potentialName.toLocaleLowerCase().includes("table")) {
+
+          if (
+            potentialName &&
+            potentialName.toLocaleLowerCase().includes("table")
+          ) {
             // Save the previous table if it existed
             if (currentTableName && currentItems.length > 0) {
               this.saveTable(currentTableName, currentItems);
@@ -87,10 +91,9 @@ export class LootService {
       }
 
       this.isLoaded = true;
-      console.log(`Loot tables loaded. Found ${this.tables.size} tables.`);
-
+      log.info(`Loot tables loaded. Found ${this.tables.size} tables.`);
     } catch (error) {
-      console.error('Failed to load loot tables:', error);
+      log.error("Failed to load loot tables:", error);
       throw error;
     }
   }
@@ -101,22 +104,25 @@ export class LootService {
   private saveTable(name: string, items: LootItem[]) {
     // Calculate max range (e.g. if items go 1-100, max is 100)
     // We assume the table is sorted or we just find the mathematical max
-    const maxRange = items.reduce((max, item) => (item.max > max ? item.max : max), 0);
-    
+    const maxRange = items.reduce(
+      (max, item) => (item.max > max ? item.max : max),
+      0,
+    );
+
     this.tables.set(name, {
       name,
       items,
-      totalRange: maxRange
+      totalRange: maxRange,
     });
   }
 
   /**
    * Parses string ranges like "1", "1-5", "01-05", "50-100"
    */
-  private parseRange(input: string): { min: number, max: number } | null {
+  private parseRange(input: string): { min: number; max: number } | null {
     // Regex matches "123" or "123-456" or "123 - 456" (handles hyphens and en-dashes)
     const match = input.match(/^(\d+)(?:[\s\-–]+(\d+))?$/);
-    
+
     if (!match) return null;
 
     const min = parseInt(match[1] ?? "0", 10);
@@ -129,7 +135,11 @@ export class LootService {
   /**
    * Main logic for the Slash Command
    */
-  public processCommand(tableInput: string, type: string, rolls: number): string[] {
+  public processCommand(
+    tableInput: string,
+    type: string,
+    rolls: number,
+  ): string[] {
     if (!this.isLoaded) {
       throw new Error("Tables are not loaded yet.");
     }
@@ -141,7 +151,7 @@ export class LootService {
     // 1. Find the table
     // We check for exact match or partial inclusion if exact fails
     let targetTable = this.tables.get(normalizedTableKey);
-    
+
     if (!targetTable) {
       // Fallback: try to find a table that contains the input string (e.g. input "A" matches "Magic Item Table A")
       for (const [key, table] of this.tables.entries()) {
@@ -160,15 +170,15 @@ export class LootService {
 
     // 2. Handle Logic based on Type
     // "On both types mission and gambling ... roll ... equal to the 'rolls' input"
-    if (normalizedType === 'mission' || normalizedType === 'gambling') {
-      
+    if (normalizedType === "mission" || normalizedType === "gambling") {
       for (let i = 0; i < rolls; i++) {
         // Generate random integer from 1 to maxRange
-        const rollResult = Math.floor(Math.random() * targetTable.totalRange) + 1;
-        
+        const rollResult =
+          Math.floor(Math.random() * targetTable.totalRange) + 1;
+
         // Find item matching the roll
         const item = targetTable.items.find(
-          (it) => rollResult >= it.min && rollResult <= it.max
+          (it) => rollResult >= it.min && rollResult <= it.max,
         );
 
         if (item) {
@@ -177,15 +187,16 @@ export class LootService {
           results.push(`Nothing (Roll: ${rollResult})`);
         }
       }
-
-    } else if (normalizedType === 'purchase') {
+    } else if (normalizedType === "purchase") {
       // Logic for purchase is not explicitly defined as a rolling action in the prompt.
       // Usually this implies listing items or checking availability.
       // Since the prompt allows stopping at generation and emphasizes rolling for the other types,
       // we return a status or empty list here.
-      results.push("Purchase mode: No rolls performed."); 
+      results.push("Purchase mode: No rolls performed.");
     } else {
-      results.push(`Error: Unknown type "${type}". Valid types: purchase, mission, gambling.`);
+      results.push(
+        `Error: Unknown type "${type}". Valid types: purchase, mission, gambling.`,
+      );
     }
 
     return results;

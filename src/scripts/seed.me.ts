@@ -1,3 +1,4 @@
+import { log } from "../lib/log.js";
 import { initDb, migrateDb, getDb, closeDb } from "../db/index.js";
 
 const DB_FILE = process.env.DB_FILE || "./data/remnant.sqlite";
@@ -25,14 +26,14 @@ async function main() {
     `SELECT name, level, xp, cp, tp FROM charlog WHERE userId = ? AND active = 1`,
     MY_ID,
   );
-  console.log("Seeded:", row);
+  log.info("Seeded:", row);
 
   await closeDb();
-  console.log("🌱 Seed complete →", DB_FILE);
+  log.info("🌱 Seed complete →", DB_FILE);
   process.exit(0);
 }
 
 main().catch((err) => {
-  console.error(err);
+  log.error(err);
   process.exit(1);
 });

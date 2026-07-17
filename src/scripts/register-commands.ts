@@ -1,3 +1,4 @@
+import { log } from "../lib/log.js";
 import { REST, Routes, SlashCommandBuilder } from "discord.js";
 import path from "node:path";
 import fs from "node:fs/promises";
@@ -73,12 +74,12 @@ async function main() {
     throw new Error("Missing TOKEN or APP_ID for current mode.");
   }
 
-  console.log(`🤖 Running in ${IS_DEV ? "DEVELOPMENT" : "PRODUCTION"} mode`);
-  console.log(`📱 Using APP_ID: ${APP_ID}`);
+  log.info(`🤖 Running in ${IS_DEV ? "DEVELOPMENT" : "PRODUCTION"} mode`);
+  log.info(`📱 Using APP_ID: ${APP_ID}`);
 
   const body = await loadCommandJSONs();
   if (body.length === 0) {
-    console.warn("No commands found in src/commands");
+    log.warn("No commands found in src/commands");
     return;
   }
   const rest = new REST({ version: "10" }).setToken(TOKEN);
@@ -87,7 +88,7 @@ async function main() {
     const global = (await rest.get(Routes.applicationCommands(APP_ID!))) as {
       name: string;
     }[];
-    console.log(
+    log.info(
       "Global commands: ",
       global.map((c) => c.name),
     );
@@ -100,11 +101,9 @@ async function main() {
   }
 
   if (CLEAR_GLOBAL) {
-    console.log("Clearing ALL GLOBAL commands...");
+    log.info("Clearing ALL GLOBAL commands...");
     await rest.put(Routes.applicationCommands(APP_ID), { body: [] });
-    console.log(
-      "✅ Global commands have been cleared (UI may cache for a bit).",
-    );
+    log.info("✅ Global commands have been cleared (UI may cache for a bit).");
     return;
   }
 
@@ -114,17 +113,15 @@ async function main() {
         "GUILD_ID not set. Refusing to deploy globally. Set GUILD_ID or pass --clear-global/--list.",
       );
     }
-    console.log(`Upserting ${body.length} commands to guild ${GUILD_ID}…`);
+    log.info(`Upserting ${body.length} commands to guild ${GUILD_ID}…`);
     await rest.put(Routes.applicationGuildCommands(APP_ID, GUILD_ID), { body });
-    console.log("✅ Guild commands updated (instant).");
+    log.info("✅ Guild commands updated (instant).");
   } else if (DEV_GUILD_ID) {
-    console.log(
-      `Upserting ${body.length} commands to dev guild ${DEV_GUILD_ID}…`,
-    );
+    log.info(`Upserting ${body.length} commands to dev guild ${DEV_GUILD_ID}…`);
     await rest.put(Routes.applicationGuildCommands(APP_ID, DEV_GUILD_ID), {
       body,
     });
-    console.log("✅ Guild commands updated (instant).");
+    log.info("✅ Guild commands updated (instant).");
   } else {
     // HARD GUARD: refuse accidental global deploys
     throw new Error(
@@ -134,6 +131,6 @@ async function main() {
 }
 
 main().catch((e) => {
-  console.error("❌ Failed to register commands: ", e);
+  log.error("❌ Failed to register commands: ", e);
   process.exit(1);
 });

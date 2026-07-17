@@ -1,6 +1,10 @@
-import { t } from '../lib/i18n.js'
+import { log } from "../lib/log.js";
+import { t } from "../lib/i18n.js";
 
-console.log('invalid:', t('errors.invalid.random'));
-console.log('perm:', t('errors.permission.guild_member_only'));
-console.log('lfg added:', t('lfg.added', { user: '@Donnie', tierLabel: 'Low Tier' }));
-console.log('-- -- END SMOKE TEST -- --');
+log.info("invalid:", t("errors.invalid.random"));
+log.info("perm:", t("errors.permission.guild_member_only"));
+log.info(
+  "lfg added:",
+  t("lfg.added", { user: "@Donnie", tierLabel: "Low Tier" }),
+);
+log.info("-- -- END SMOKE TEST -- --");

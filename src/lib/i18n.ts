@@ -1,3 +1,4 @@
+import { log } from "./log.js";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -46,9 +47,7 @@ function fmt(template: string, params?: Params) {
 
     for (const p of paths) v = (v as Record<string, unknown>)?.[p];
     if (v == null) {
-      console.warn(
-        `[i18n] missing placeholder "${k}" for template: ${template}`,
-      );
+      log.warn(`[i18n] missing placeholder "${k}" for template: ${template}`);
     }
     return v == null ? `{${k}}` : String(v);
   });
@@ -67,7 +66,7 @@ function getRaw(key: string): unknown {
 export function t(key: string, params?: Params): string {
   const node = getRaw(key);
   if (node == null) {
-    console.warn(`[i18n] missing key: ${key}`);
+    log.warn(`[i18n] missing key: ${key}`);
     return key; // shows the missing key rather than throwing
   }
 
@@ -79,7 +78,7 @@ export function t(key: string, params?: Params): string {
 
   // A non-string / non-array node means the key points at a subtree, not a
   // leaf string — surface the key instead of "[object Object]".
-  console.warn(`[i18n] key is not a string: ${key}`);
+  log.warn(`[i18n] key is not a string: ${key}`);
   return key;
 }
 

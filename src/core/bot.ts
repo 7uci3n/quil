@@ -1,4 +1,5 @@
 // core/bot.ts
+import { log } from "../lib/log.js";
 import {
   Client,
   GatewayIntentBits,
@@ -54,7 +55,7 @@ async function loadCommands() {
   const commandsDir = path.resolve(here, "../commands");
   const ext = isBuilt ? ".js" : ".ts";
 
-  console.log(`Loading commands from ${commandsDir} (built=${isBuilt})`);
+  log.info(`Loading commands from ${commandsDir} (built=${isBuilt})`);
 
   const files = fsSync
     .readdirSync(commandsDir)
@@ -62,7 +63,7 @@ async function loadCommands() {
       (f) => f.endsWith(ext) && !f.endsWith(".d.ts") && !f.endsWith(".map"),
     );
 
-  console.log(
+  log.info(
     `Command files found (${ext}):`,
     files.map((f) => path.join(commandsDir, f)),
   );
@@ -72,7 +73,7 @@ async function loadCommands() {
       const full = path.join(commandsDir, f); // ✅ join directory + filename
       const mod: CommandModule = await import(pathToFileURL(full).href);
       if (!mod?.data?.name) {
-        console.warn(`⚠️  Skipping ${full}: no export 'data' with a name`);
+        log.warn(`⚠️  Skipping ${full}: no export 'data' with a name`);
         continue;
       }
       const cmdJSON = mod.data.toJSON();
@@ -82,10 +83,10 @@ async function loadCommands() {
       }
       commands.set(cmdJSON.name, mod);
     } catch (err) {
-      console.error(`❌ Failed to import ${f}:`, err);
+      log.error(`❌ Failed to import ${f}:`, err);
     }
   }
-  console.log(`Loaded ${commands.size} slash commands.`);
+  log.info(`Loaded ${commands.size} slash commands.`);
 }
 
 const client = new Client({
@@ -121,7 +122,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     try {
       await mod.execute(interaction);
     } catch (err) {
-      console.error(`[/${interaction.commandName}]`, err);
+      log.error(`[/${interaction.commandName}]`, err);
       await safeReplyError(
         interaction,
         t("errors.generic") || "An error occurred while executing the command.",
@@ -140,7 +141,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       try {
         await retire.handleModal(interaction);
       } catch (err) {
-        console.error("[Retire Modal]", err);
+        log.error("[Retire Modal]", err);
         await safeReplyError(
           interaction,
           t("errors.generic") ||
@@ -156,7 +157,7 @@ client.once(Events.ClientReady, async () => {
   await initDb();
   await loadCharCacheFromDB();
   await loadStoryCacheFromDB();
-  console.log(
+  log.info(
     `Ready as ${client.user?.tag}. Guild: ${guildId} (${guildCfg.name})`,
   );
 });
@@ -164,17 +165,17 @@ const DEV_TOKEN = CONFIG.secrets.devToken;
 const isDevelopment = process.argv.includes("--dev");
 
 if (isDevelopment) {
-  console.log("🚀 Starting in development mode...");
+  log.info("🚀 Starting in development mode...");
   client.login(DEV_TOKEN).catch(() => {
-    console.error(
+    log.error(
       "❌ Failed to login to Discord. Please check your DEV_DISCORD_TOKEN.",
     );
     process.exit(1);
   });
 } else {
-  console.log("🚀 Starting in production mode...");
+  log.info("🚀 Starting in production mode...");
   client.login(CONFIG.secrets.token).catch(() => {
-    console.error(
+    log.error(
       "❌ Failed to login to Discord. Please check your DISCORD_TOKEN.",
     );
     process.exit(1);
@@ -186,16 +187,16 @@ let shuttingDown = false;
 async function shutdown(signal: string) {
   if (shuttingDown) return;
   shuttingDown = true;
-  console.log(`Received ${signal}, shutting down...`);
+  log.info(`Received ${signal}, shutting down...`);
   try {
     await client.destroy();
   } catch (e) {
-    console.error("Error destroying client:", e);
+    log.error("Error destroying client:", e);
   }
   try {
     await closeDb();
   } catch (e) {
-    console.error("Error closing DB:", e);
+    log.error("Error closing DB:", e);
   }
   process.exit(0);
 }
@@ -204,16 +205,16 @@ process.on("SIGTERM", () => void shutdown("SIGTERM"));
 
 // on unhandled rejections
 process.on("unhandledRejection", (reason, promise) => {
-  console.error("Unhandled Rejection at:", promise, "reason:", reason);
+  log.error("Unhandled Rejection at:", promise, "reason:", reason);
 });
 
 // on uncaught exceptions
 process.on("uncaughtException", (err) => {
-  console.error("Uncaught Exception thrown:", err);
+  log.error("Uncaught Exception thrown:", err);
   process.exit(1);
 });
 
 // on warnings
 process.on("warning", (warning) => {
-  console.warn("Warning:", warning);
+  log.warn("Warning:", warning);
 });

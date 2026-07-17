@@ -1,4 +1,5 @@
 // src/commands/lfg.ts
+import { log } from "../lib/log.js";
 import {
   ChatInputCommandInteraction,
   SlashCommandBuilder,
@@ -135,7 +136,7 @@ async function refreshBoard(ix: ChatInputCommandInteraction, reason?: string) {
     }
   }
   const sent = await chan.send({ embeds: [embed] });
-  console.log(`LFG: Posted new board message (${reason ?? "auto"})`);
+  log.info(`LFG: Posted new board message (${reason ?? "auto"})`);
   await setGuildState(guildId, BOARD_KEY, sent.id);
 }
 

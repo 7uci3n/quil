@@ -1,3 +1,4 @@
+import { log } from "../lib/log.js";
 import type { ChatInputCommandInteraction } from "discord.js";
 import advancement from "../../config/advancement.json" with { type: "json" };
 import { CONFIG } from "../config/resolved.js";
@@ -108,7 +109,7 @@ export async function announceLevelChange(
       guild.channels.cache.get(REWARDS_CHANNEL_ID)) ||
     ix.channel;
 
-  console.log(msg);
+  log.info(msg);
   // @ts-expect-error (text channel narrowing omitted)
   await target?.send(msg);
 }

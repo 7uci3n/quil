@@ -1,4 +1,5 @@
 // src/commands/initiate.ts
+import { log } from "../lib/log.js";
 import {
   SlashCommandBuilder,
   ChatInputCommandInteraction,
@@ -82,10 +83,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         await member.roles.add(GUILD_MEMBER_ROLE_ID);
       }
     } catch (err) {
-      console.error(
-        `Failed to grant Guild Member role to ${targetUser.id}:`,
-        err,
-      );
+      log.error(`Failed to grant Guild Member role to ${targetUser.id}:`, err);
       await interaction.followUp({
         flags: MessageFlags.Ephemeral,
         content: `⚠️ Character created, but I couldn't grant the Guild Member role (<@&${GUILD_MEMBER_ROLE_ID}>). Check my role position and permissions.\n\`\`\`${err instanceof Error ? err.message : String(err)}\`\`\``,

@@ -1,10 +1,16 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder, PermissionFlagsBits, MessageFlags } from 'discord.js';
-import { getDb } from '../db/index.js'; 
-import pkg from '../../package.json' with { type: 'json' };
+import { log } from "../lib/log.js";
+import {
+  ChatInputCommandInteraction,
+  SlashCommandBuilder,
+  PermissionFlagsBits,
+  MessageFlags,
+} from "discord.js";
+import { getDb } from "../db/index.js";
+import pkg from "../../package.json" with { type: "json" };
 
 export const data = new SlashCommandBuilder()
-  .setName('health')
-  .setDescription('Show bot health/uptime and basic checks')
+  .setName("health")
+  .setDescription("Show bot health/uptime and basic checks")
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles); // optional: restrict
 
 export async function execute(interaction: ChatInputCommandInteraction) {
@@ -15,27 +21,26 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   // DB probe (non-destructive, fast)
   const db = getDb();
 
-  let dbStatus = 'skipped';
+  let dbStatus = "skipped";
   try {
-    await db.get('SELECT 1'); 
-    dbStatus = 'ok';
+    await db.get("SELECT 1");
+    dbStatus = "ok";
   } catch (err) {
-    dbStatus = 'error';
-    console.error('❌ DB health check failed:', err);
+    dbStatus = "error";
+    log.error("❌ DB health check failed:", err);
   }
 
-    await interaction.reply({
+  await interaction.reply({
     flags: MessageFlags.Ephemeral,
-    content:
-      [
-        `** — /health**`,
-        `• Uptime: ${ms(uptimeMs)}`,
-        `• WS Ping: ${ping} ms`,
-        `• DB: ${dbStatus}`,
-        `• Version: ${pkg.version ?? 'dev'} (${process.env.COMMIT_SHA?.slice(0,7) ?? 'local'})`,
-        `• Env: ${process.env.NODE_ENV ?? 'dev'}`,
-        `• Guild: ${interaction.guild?.name ?? 'DM'} (${interaction.guildId ?? 'n/a'})`,
-      ].join('\n'),
+    content: [
+      `** — /health**`,
+      `• Uptime: ${ms(uptimeMs)}`,
+      `• WS Ping: ${ping} ms`,
+      `• DB: ${dbStatus}`,
+      `• Version: ${pkg.version ?? "dev"} (${process.env.COMMIT_SHA?.slice(0, 7) ?? "local"})`,
+      `• Env: ${process.env.NODE_ENV ?? "dev"}`,
+      `• Guild: ${interaction.guild?.name ?? "DM"} (${interaction.guildId ?? "n/a"})`,
+    ].join("\n"),
   });
 }
 

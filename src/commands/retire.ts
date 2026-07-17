@@ -1,3 +1,4 @@
+import { log } from "../lib/log.js";
 import {
   SlashCommandBuilder,
   ChatInputCommandInteraction,
@@ -112,7 +113,7 @@ export async function handleModal(interaction: ModalSubmitInteraction) {
   try {
     result = await retireCharacter(targetId, char);
   } catch (err) {
-    console.error("[retire] failed:", err);
+    log.error("[retire] failed:", err);
     return interaction.reply({
       content: t("errors.generic"),
       flags: MessageFlags.Ephemeral,

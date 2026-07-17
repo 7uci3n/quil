@@ -1,3 +1,4 @@
+import { log } from "../lib/log.js";
 import { open } from "sqlite";
 import sqlite3 from "sqlite3";
 import fs from "fs";
@@ -29,7 +30,7 @@ async function main() {
   await db.exec(`VACUUM INTO '${escaped}';`);
   await db.close();
 
-  console.log(`[backup] wrote ${dest}`);
+  log.info(`[backup] wrote ${dest}`);
 
   // Retention cleanup
   const cutoff = Date.now() - RETAIN_DAYS * 24 * 60 * 60 * 1000;
@@ -42,12 +43,12 @@ async function main() {
     const s = fs.statSync(f);
     if (s.mtime.getTime() < cutoff) {
       fs.unlinkSync(f);
-      console.log(`[backup] pruned ${f}`);
+      log.info(`[backup] pruned ${f}`);
     }
   }
 }
 
 main().catch((err) => {
-  console.error("[backup] failed:", err);
+  log.error("[backup] failed:", err);
   process.exit(1);
 });
