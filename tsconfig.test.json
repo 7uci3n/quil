@@ -1,0 +1,6 @@
+{
+  // Typecheck config: base compiler options, but also cover the test suite
+  // (the build tsconfig only includes src/). Used by `npm run typecheck`.
+  "extends": "./tsconfig.json",
+  "include": ["src", "data", "tests"]
+}

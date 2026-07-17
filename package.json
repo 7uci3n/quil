@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "tsx watch src/core/bot.ts --dev",
     "build": "tsc",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit -p tsconfig.test.json",
     "strings:smoke": "tsx src/scripts/strings-smoke.ts",
     "deploy:dev": "tsx src/scripts/register-commands.ts",
     "deploy:prod": "tsx src/scripts/register-commands.ts --prod",
