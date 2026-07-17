@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "tsx watch src/core/bot.ts --dev",
     "build": "tsc",
+    "typecheck": "tsc --noEmit",
     "strings:smoke": "tsx src/scripts/strings-smoke.ts",
     "deploy:dev": "tsx src/scripts/register-commands.ts",
     "deploy:prod": "tsx src/scripts/register-commands.ts --prod",
@@ -73,6 +74,7 @@
   "devDependencies": {
     "@eslint/js": "^9.36.0",
     "@types/node": "^24.5.2",
+    "@vitest/coverage-v8": "^4.1.10",
     "@vitest/ui": "^4.0.16",
     "eslint": "^9.36.0",
     "globals": "^16.4.0",

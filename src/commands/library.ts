@@ -1,4 +1,11 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, EmbedBuilder, MessageFlags, SlashCommandBuilder } from "discord.js";
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ChatInputCommandInteraction,
+  EmbedBuilder,
+  SlashCommandBuilder,
+} from "discord.js";
 import { StoryCache } from "../utils/db_queries.js";
 import { chunkString } from "../utils/embeds.js";
 
@@ -11,8 +18,20 @@ export interface SheetStory {
 export const data = new SlashCommandBuilder()
   .setName("library")
   .setDescription("Read to your heart's content")
-  .addStringOption((o) => o.setName("genre").setDescription("Story genre / category").setRequired(false).setAutocomplete(true))
-  .addStringOption((o) => o.setName("title").setDescription("Story title").setRequired(false).setAutocomplete(true));
+  .addStringOption((o) =>
+    o
+      .setName("genre")
+      .setDescription("Story genre / category")
+      .setRequired(false)
+      .setAutocomplete(true),
+  )
+  .addStringOption((o) =>
+    o
+      .setName("title")
+      .setDescription("Story title")
+      .setRequired(false)
+      .setAutocomplete(true),
+  );
 
 function getRandomElement<T>(arr: T[]): T | undefined {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -20,12 +39,12 @@ function getRandomElement<T>(arr: T[]): T | undefined {
 
 export function pickStoryFromCache(
   title?: string | null,
-  genre?: string | null
+  genre?: string | null,
 ): SheetStory | null {
   // 1. Title explicitly set → exact match
   if (title) {
     const found = StoryCache.stories.find(
-      s => s.title.toLowerCase() === title.toLowerCase()
+      (s) => s.title.toLowerCase() === title.toLowerCase(),
     );
     return found ?? null;
   }
@@ -38,9 +57,7 @@ export function pickStoryFromCache(
     const randomTitle = getRandomElement(titles);
     if (!randomTitle) return null;
 
-    return (
-      StoryCache.stories.find(s => s.title === randomTitle) ?? null
-    );
+    return StoryCache.stories.find((s) => s.title === randomTitle) ?? null;
   }
 
   // 3. Neither set → random story overall
@@ -49,15 +66,14 @@ export function pickStoryFromCache(
 }
 
 export async function execute(interaction: ChatInputCommandInteraction) {
-  
-  const title = interaction.options.getString('title');
-  const genre = interaction.options.getString('genre');
+  const title = interaction.options.getString("title");
+  const genre = interaction.options.getString("genre");
 
   const story = pickStoryFromCache(title, genre);
 
   if (!story) {
     await interaction.reply({
-      content: 'No story found for the given parameters.',
+      content: "No story found for the given parameters.",
       ephemeral: true,
     });
     return;
@@ -77,13 +93,13 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
-      .setCustomId('prev')
-      .setLabel('◀')
+      .setCustomId("prev")
+      .setLabel("◀")
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
-      .setCustomId('next')
-      .setLabel('▶')
-      .setStyle(ButtonStyle.Secondary)
+      .setCustomId("next")
+      .setLabel("▶")
+      .setStyle(ButtonStyle.Secondary),
   );
 
   const response = await interaction.reply({
@@ -100,15 +116,15 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     time: 5 * 60_000,
   });
 
-  collector?.on('collect', async i => {
+  collector?.on("collect", async (i) => {
     if (i.user.id !== interaction.user.id) {
-      await i.reply({ content: 'Not your story!', ephemeral: true });
+      await i.reply({ content: "Not your story!", ephemeral: true });
       return;
     }
 
-    if (i.customId === 'prev') {
+    if (i.customId === "prev") {
       pageIndex = Math.max(0, pageIndex - 1);
-    } else if (i.customId === 'next') {
+    } else if (i.customId === "next") {
       pageIndex = Math.min(pages.length - 1, pageIndex + 1);
     }
 

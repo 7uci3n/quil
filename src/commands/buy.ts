@@ -18,51 +18,53 @@ const CC_CHANNEL_ID = CFG.channels?.crewCoins || null;
 // helpers
 const toCp = (gp: number) => Math.round(gp * 100);
 const toGp = (cp: number) => (cp / 100).toFixed(2);
-const resourceMapping: { [id: string]: [string, string]; } = {"cp":["GP","💰"], "tp":["GT","🎫"], "dtp":["DTP","🔨"], "cc":["CC","🪙"], "xp":["XP","💪"]}
 
 export const data = new SlashCommandBuilder()
   .setName("buy")
-  .setDescription("Buy an item for GP, GT, and/or DTP and record it to the resource log.")
+  .setDescription(
+    "Buy an item for GP, GT, and/or DTP and record it to the resource log.",
+  )
   .addStringOption((opt) =>
     opt
       .setName("item")
       .setDescription("What are you buying?")
-      .setRequired(true)
+      .setRequired(true),
   )
   .addNumberOption((opt) =>
     opt
       .setName("gp")
       .setDescription("GP (Gold Pieces) to spend")
-      .setMinValue(0)
+      .setMinValue(0),
   )
   .addNumberOption((opt) =>
     opt
       .setName("gt")
       .setDescription("GT (Golden Tickets) to spend")
-      .setMinValue(0)
+      .setMinValue(0),
   )
   .addNumberOption((opt) =>
     opt
       .setName("dtp")
       .setDescription("DTP (Downtime Points) to spend")
-      .setMinValue(0)
+      .setMinValue(0),
   )
   .addNumberOption((opt) =>
-    opt
-      .setName("cc")
-      .setDescription("CC (Crew Coins) to spend")
-      .setMinValue(0)
+    opt.setName("cc").setDescription("CC (Crew Coins) to spend").setMinValue(0),
   );
 
 export async function execute(ix: ChatInputCommandInteraction) {
   // Channel guard: only allowed in Resource or Magic Items channel (or test override)
-  const isInAllowedChannel = ix.channelId === RESOURCE_CHANNEL_ID || ix.channelId === MAGIC_ITEMS_CHANNEL_ID || ix.channelId === DTP_CHANNEL_ID || ix.channelId === CC_CHANNEL_ID;
+  const isInAllowedChannel =
+    ix.channelId === RESOURCE_CHANNEL_ID ||
+    ix.channelId === MAGIC_ITEMS_CHANNEL_ID ||
+    ix.channelId === DTP_CHANNEL_ID ||
+    ix.channelId === CC_CHANNEL_ID;
   const isInConfiguredGuild = ix.guildId === CONFIG.guild?.id;
 
   if (!isInAllowedChannel && isInConfiguredGuild) {
     await ix.reply({
       flags: MessageFlags.Ephemeral,
-      content: t('sell.notInResourceChannel'),
+      content: t("sell.notInResourceChannel"),
     });
     return;
   }
@@ -83,7 +85,7 @@ export async function execute(ix: ChatInputCommandInteraction) {
     if (!hasCrew) {
       await ix.reply({
         flags: MessageFlags.Ephemeral,
-        content: t('buy.errors.ccCrewOnly'),
+        content: t("buy.errors.ccCrewOnly"),
       });
       return;
     }
@@ -93,33 +95,33 @@ export async function execute(ix: ChatInputCommandInteraction) {
   if (gpInput === 0 && gtInput === 0 && dtpInput === 0 && ccInput === 0) {
     await ix.reply({
       flags: MessageFlags.Ephemeral,
-      content: t('buy.errors.noResourceSpecified'),
+      content: t("buy.errors.noResourceSpecified"),
     });
     return;
   }
 
   // Update DTP if needed
   if (dtpInput > 0) {
-    if (await updateDTP(user.id) == null) {
+    if ((await updateDTP(user.id)) == null) {
       return ix.reply({
         flags: MessageFlags.Ephemeral,
-        content: t('dtp.errors.notInSystem', { username: user.username }),
+        content: t("dtp.errors.notInSystem", { username: user.username }),
       });
     }
   }
-  
+
   const row = await getPlayer(user.id);
   if (!row) {
     await ix.reply({
       flags: MessageFlags.Ephemeral,
-      content: t('buy.errors.noPlayerRecord', { user: user.username }),
+      content: t("buy.errors.noPlayerRecord", { user: user.username }),
     });
     return;
   }
 
   // Validate sufficient funds for all requested resources
   const insufficientResources: string[] = [];
-  
+
   if (gpInput > 0 && row.cp < toCp(gpInput)) {
     insufficientResources.push("💰 GP");
   }
@@ -140,7 +142,7 @@ export async function execute(ix: ChatInputCommandInteraction) {
     const resourceList = insufficientResources.join(", ");
     await ix.reply({
       flags: MessageFlags.Ephemeral,
-      content: t('buy.errors.noFunds', { resources: resourceList }),
+      content: t("buy.errors.noFunds", { resources: resourceList }),
     });
     return;
   }
@@ -148,7 +150,7 @@ export async function execute(ix: ChatInputCommandInteraction) {
   // Build resource adjustment arrays
   const columns: string[] = [];
   const values: number[] = [];
-  
+
   if (gpInput > 0) {
     columns.push("cp");
     values.push(toCp(gpInput) * -1);
@@ -170,7 +172,7 @@ export async function execute(ix: ChatInputCommandInteraction) {
   if (!updated) {
     await ix.reply({
       flags: MessageFlags.Ephemeral,
-      content: t('errors.generic'),
+      content: t("errors.generic"),
     });
     return;
   }
@@ -178,7 +180,7 @@ export async function execute(ix: ChatInputCommandInteraction) {
   // Build cost and balance strings for response
   const costParts: string[] = [];
   const balanceParts: string[] = [];
-  
+
   if (gpInput > 0) {
     costParts.push(`💰 **${gpInput} GP**`);
     balanceParts.push(`💰 **${toGp(updated.cp)} GP**`);
@@ -201,11 +203,11 @@ export async function execute(ix: ChatInputCommandInteraction) {
   const balanceStr = balanceParts.join(" · ");
 
   await ix.reply({
-    content: t('buy.purchaseSuccessMulti', { 
-      item, 
-      cost: costStr, 
+    content: t("buy.purchaseSuccessMulti", {
+      item,
+      cost: costStr,
       balance: balanceStr,
-      name: updated.name ?? ""
+      name: updated.name ?? "",
     }),
   });
 }

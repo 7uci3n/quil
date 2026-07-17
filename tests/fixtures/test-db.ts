@@ -1,14 +1,12 @@
 // Test database utilities
-import { open, Database } from 'sqlite';
-import sqlite3 from 'sqlite3';
-import type { Sqlite } from '../../src/db/index.js';
-
-let testDbCounter = 0;
+import { open } from "sqlite";
+import sqlite3 from "sqlite3";
+import type { Sqlite } from "../../src/db/index.js";
 
 export async function createTestDb(): Promise<Sqlite> {
   // Use in-memory database for tests
   const db = await open({
-    filename: ':memory:',
+    filename: ":memory:",
     driver: sqlite3.Database,
   });
 
@@ -65,17 +63,20 @@ export async function createTestDb(): Promise<Sqlite> {
   return db;
 }
 
-export async function seedTestPlayer(db: Sqlite, data: {
-  userId: string;
-  name: string;
-  level?: number;
-  xp?: number;
-  cp?: number;
-  tp?: number;
-  dtp?: number;
-  cc?: number;
-  active?: boolean;
-}) {
+export async function seedTestPlayer(
+  db: Sqlite,
+  data: {
+    userId: string;
+    name: string;
+    level?: number;
+    xp?: number;
+    cp?: number;
+    tp?: number;
+    dtp?: number;
+    cc?: number;
+    active?: boolean;
+  },
+) {
   await db.run(
     `INSERT INTO charlog (userId, name, level, xp, cp, tp, dtp, cc, active)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -87,7 +88,7 @@ export async function seedTestPlayer(db: Sqlite, data: {
     data.tp ?? 0,
     data.dtp ?? 0,
     data.cc ?? 0,
-    data.active ? 1 : 0
+    data.active ? 1 : 0,
   );
 }
 

@@ -12,14 +12,15 @@ lives in the themed docs. Suggested: one branch + PR per phase.
 Config-only; no behavior change. Turns CI from theatre into a real safety net before
 you touch logic.
 
-- [ ] `TOOL-2` ESLint `ignores: ["dist/**", …]`
-- [ ] `TOOL-1` ESLint `globals.node`
-- [ ] `TOOL-6` add `.prettierignore`
-- [ ] `TOOL-3` add `@vitest/coverage-v8`; wire `test:coverage` into CI (thresholds low initially)
-- [ ] `TOOL-4` add `typecheck: tsc --noEmit`; run in CI; enable `noUnusedLocals/Params`
-- [ ] `TOOL-5` drop `jsx`, include `tests` in typecheck
-- [ ] Re-arm `quality.yml` lint/format (drop `continue-on-error`) once `src` is clean
-- **Exit:** `npm run lint && npm run typecheck && npm test` all green, coverage measured.
+- [x] `TOOL-2` ESLint `ignores: ["dist/**", "coverage/**", ".code-graph/**"]`
+- [x] `TOOL-1` ESLint `globals.node`
+- [x] `TOOL-6` add `.prettierignore`
+- [x] `TOOL-3` add `@vitest/coverage-v8`; `all: true` + `include: ['src/**']`; thresholds at honest floor (~3%); CI runs `test:coverage`
+- [x] `TOOL-4` add `typecheck: tsc --noEmit`; run in CI. _(Did NOT enable `noUnusedLocals/noUnusedParameters` — ESLint `no-unused-vars` already enforces this; avoids double-maintenance and a build-breaking flag flip. Left as a deliberate no-op.)_
+- [~] `TOOL-5` dropped `jsx`. _(Tests NOT added to typecheck: they aren't in `tsconfig.include`, so `tsc --noEmit` covers `src` only. Adding a `tsconfig.test.json` is a small follow-up — tracked, not done.)_
+- [x] Re-armed **lint** in `quality.yml` (blocking). **Format stays advisory** — re-arming it needs a repo-wide `prettier --write` (the deferred bulk reformat), out of Phase 0 scope.
+- Also removed the dead vars that blocked a clean lint (QUAL-5 `ROLE`, `time`/`date`; ARCH-3 duplicate `resourceMapping` in `buy.ts`; dead channel-guard locals in `resource.ts`).
+- **Exit ✅:** `npm run lint`, `npm run typecheck`, `npm run test:coverage`, `npm run build` all green (45 tests; coverage measured + floor enforced).
 
 ## Phase 1 — Critical & security _(before ANY feature work)_
 

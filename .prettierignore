@@ -1,0 +1,11 @@
+# Generated / vendored — don't format these
+dist/
+node_modules/
+coverage/
+.code-graph/
+package-lock.json
+
+# Runtime state
+data/
+backups/
+*.sqlite
