@@ -4,7 +4,6 @@ import {
   SlashCommandBuilder,
   EmbedBuilder,
   GuildMember,
-  PermissionFlagsBits,
   userMention,
   MessageFlags,
 } from "discord.js";
@@ -21,6 +20,7 @@ import {
 import { levelForXP, proficiencyFor } from "../domain/xp.js";
 
 import { t } from "../lib/i18n.js";
+import { hasAnyRole, isAdmin, isDevBypass } from "../config/validaters.js";
 
 
 /* ──────────────────────────────────────────────────────────────────────────────
@@ -36,26 +36,6 @@ const PERMS = {
 };
 
 const REWARDS_CHANNEL_ID = CFG.channels?.resourceTracking;
-
-function hasAnyRole(member: GuildMember | null, allowed: string[]) {
-  if (!member || !allowed?.length) return false;
-  const have = new Set(member.roles.cache.map((r) => r.id));
-  return allowed.some((rid) => have.has(rid));
-}
-
-function isAdmin(member: GuildMember | null) {
-  try {
-    return !!member?.permissions?.has?.(PermissionFlagsBits.Administrator);
-  } catch {
-    return false;
-  }
-}
-
-// Optional dev bypass while testing
-const SUPERUSER_IDS = (process.env.DEV_SUPERUSERS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
-function isDevBypass(ix: ChatInputCommandInteraction) {
-  return CONFIG.env !== "prod" && SUPERUSER_IDS.includes(ix.user.id);
-}
 
 /* ──────────────────────────────────────────────────────────────────────────────
    SLASH COMMAND DEFINITION

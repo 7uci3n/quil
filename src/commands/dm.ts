@@ -1,12 +1,12 @@
 import {
   SlashCommandBuilder,
   ChatInputCommandInteraction,
-  PermissionFlagsBits,
   EmbedBuilder,
 } from 'discord.js';
 
 import { CONFIG } from '../config/resolved.js';
 import { t } from '../lib/i18n.js';
+import { hasAnyRole, isAdmin } from '../config/validaters.js';
 
 const CFG = CONFIG.guild!.config;
 
@@ -43,11 +43,8 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   }
 
   if (sub === 'toggle') {
-    // Require staff/GM for toggle — mirrors old permission vibe.
-    // If you want looser rules, remove this check.
     const member = await guild.members.fetch(interaction.user.id);
-    const canToggle = member.permissions.has(PermissionFlagsBits.KickMembers)
-      || member.roles.cache.some(r => ['DM', 'Crew'].includes(r.name));
+    const canToggle = hasAnyRole(member, [CFG.roles.dm.id, CFG.roles.member.id].filter(Boolean) as string[]) || isAdmin(member);
     if (!canToggle) {
       return interaction.reply({ content: t('dm.toggle.notAllowed'), ephemeral: true });
     }

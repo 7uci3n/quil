@@ -1,5 +1,12 @@
 {
     "retire": {
+    "errors": {
+        "noPermission": [
+            "🖋 Only crew members or staff can retire another adventurer.",
+            "🖋 Misfiled. You don't have authority to retire someone else's record.",
+            "🖋 The ledger restricts that action to crew and above. Nice try."
+        ]
+    },
     "noAdventurer": [
         "🖋 Can’t retire what’s not recorded. **{name}** isn’t in the ledger.",
         "🖋 No entry found for **{name}**. Maybe they never existed?",

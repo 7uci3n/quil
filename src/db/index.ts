@@ -140,6 +140,9 @@ export async function migrateDb(dbFile = DEFAULT_DB) {
       PRIMARY KEY (title)
     );
   `);}
+  // add author column to library table
+  const migrate_check_library_author = await db.get(`SELECT * FROM pragma_table_info('library') WHERE name = 'author';`);
+  if (!migrate_check_library_author) {await db.exec(`ALTER TABLE library ADD COLUMN author TEXT;`);}
   // add COLUMN cc to charlog
   const migrate_check5 = await db.get(`SELECT * FROM pragma_table_info('charlog') WHERE name = 'cc';`);
   if (!migrate_check5) {await db.exec(`

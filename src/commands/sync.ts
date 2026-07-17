@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder, PermissionFlagsBits, MessageFlags } from 'discord.js';
+import { ChatInputCommandInteraction, SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 import { getDb } from '../db/index.js'; 
 import { fetchStoriesFromGoogleSheet } from '../utils/gsheet.js';
 import { loadCharCacheFromDB, loadStoryCacheFromDB } from '../utils/db_queries.js';
@@ -18,12 +18,12 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   await db.run('DELETE FROM library');
 
   const insertStmt = await db.prepare(
-    `INSERT INTO library (title, genre, content)
-     VALUES (?, ?, ?)`
+    `INSERT INTO library (title, genre, content, author)
+     VALUES (?, ?, ?, ?)`
   );
 
   for (const row of rows) {
-    await insertStmt.run(row.title, row.genre, row.content);
+    await insertStmt.run(row.title, row.genre, row.content, row.author ?? null);
   }
 
   await insertStmt.finalize();
@@ -32,7 +32,6 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   await loadCharCacheFromDB();
   await loadStoryCacheFromDB();        // refresh in-memory cache
   await interaction.reply({
-    flags: MessageFlags.Ephemeral,
     content: `🖋 The libary's ledger is up to date again.`
   });
 }

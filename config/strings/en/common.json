@@ -38,6 +38,13 @@
       "🖋 Sorry, there's no active character for {user}. Be sure they've been initiated.",
       "🖋 {user} has no active character. They need to /initiate first.",
       "🖋 No active character found for {user}. Try /initiate."
+    ],
+    "noRole": [
+      "🖋 You don't have the required role for that.",
+      "🖋 That action requires a role you don't hold.",
+      "🖋 Access denied. The ledger doesn't recognise your credentials.",
+      "🖋 Misfiled. You lack the standing to do that.",
+      "🖋 The quill hesitates. You're not authorised for this action."
     ]
   },    
   "errors": {

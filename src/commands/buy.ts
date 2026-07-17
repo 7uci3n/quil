@@ -6,6 +6,7 @@ import {
 } from "discord.js";
 import { CONFIG } from "../config/resolved.js";
 import { t } from "../lib/i18n.js";
+import { hasAnyRole, requireChannel } from "../config/validaters.js";
 import { getPlayer, getPlayerCC } from "../utils/db_queries.js";
 import { adjustResource } from "../utils/db_queries.js";
 import { updateDTP } from "../domain/resource.js";
@@ -55,17 +56,7 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function execute(ix: ChatInputCommandInteraction) {
-  // Channel guard: only allowed in Resource or Magic Items channel (or test override)
-  const isInAllowedChannel = ix.channelId === RESOURCE_CHANNEL_ID || ix.channelId === MAGIC_ITEMS_CHANNEL_ID || ix.channelId === DTP_CHANNEL_ID || ix.channelId === CC_CHANNEL_ID;
-  const isInConfiguredGuild = ix.guildId === CONFIG.guild?.id;
-
-  if (!isInAllowedChannel && isInConfiguredGuild) {
-    await ix.reply({
-      flags: MessageFlags.Ephemeral,
-      content: t('sell.notInResourceChannel'),
-    });
-    return;
-  }
+  if (!await requireChannel(ix, [RESOURCE_CHANNEL_ID, MAGIC_ITEMS_CHANNEL_ID, DTP_CHANNEL_ID, CC_CHANNEL_ID], { errorKey: 'sell.notInResourceChannel' })) return;
 
   const member = ix.member as GuildMember;
   const user = member.user;
@@ -78,9 +69,7 @@ export async function execute(ix: ChatInputCommandInteraction) {
 
   // Permission check: CC is crew+ only
   if (ccInput > 0) {
-    const crewRoleId = CFG.roles.member.id;
-    const hasCrew = crewRoleId && member.roles.cache.has(crewRoleId);
-    if (!hasCrew) {
+    if (!hasAnyRole(member, [CFG.roles.member.id].filter(Boolean) as string[])) {
       await ix.reply({
         flags: MessageFlags.Ephemeral,
         content: t('buy.errors.ccCrewOnly'),

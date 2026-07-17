@@ -4,7 +4,6 @@ import {
   SlashCommandBuilder,
   EmbedBuilder,
   GuildMember,
-  PermissionFlagsBits,
   userMention,
   MessageFlags,
 } from "discord.js";
@@ -32,6 +31,7 @@ import {
 import { getGuildState, setGuildState } from "../domain/guildState.js";
 import { levelForXP } from "../domain/xp.js";
 import { t } from "../lib/i18n.js";
+import { hasAnyRole, isAdmin } from "../config/validaters.js";
 
 /* ──────────────────────────────────────────────────────────────────────────────
   CONFIG / PERMS
@@ -54,19 +54,6 @@ const PERMS = {
   postBoard: [ROLES.moderator.id, ROLES.admin.id],
   purge: [ROLES.moderator.id, ROLES.admin.id],
 };
-
-function hasAnyRole(member: GuildMember | null, allowed: string[]) {
-  if (!member || !allowed?.length) return false;
-  const have = new Set(member.roles.cache.map((r) => r.id));
-  return allowed.some((rid) => have.has(rid));
-}
-function isAdmin(member: GuildMember | null) {
-  try {
-    return !!member?.permissions?.has?.(PermissionFlagsBits.Administrator);
-  } catch {
-    return false;
-  }
-}
 
 /* ──────────────────────────────────────────────────────────────────────────────
   DB HELPERS (charlog read)

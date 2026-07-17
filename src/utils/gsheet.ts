@@ -2,22 +2,6 @@ import axios from 'axios';
 import { parse } from 'csv-parse/sync';
 import type { SheetStory } from '../commands/library.js';
 
-type RawStory = {
-  title: string | undefined;
-  genre: string | undefined;
-  content: string | undefined;
-};
-
-function isValidStory(
-  story: RawStory
-): story is SheetStory {
-  return (
-    typeof story.title === 'string' &&
-    typeof story.genre === 'string' &&
-    typeof story.content === 'string'
-  );
-}
-
 export async function fetchStoriesFromGoogleSheet(): Promise<SheetStory[]> {
     
     const LIBRARY_SHEET_ID = '1gIqy0R-jj3OdH3rtfSqjwrt5COdfRN-_pTVyVQOwsnI';
@@ -40,12 +24,14 @@ export async function fetchStoriesFromGoogleSheet(): Promise<SheetStory[]> {
     trim: true,
   }) as string[][];
 
-  return records
-    .filter(row => row.length >= 3)
-    .map(row => ({
-      title: row[0]?.trim(),
-      genre: row[1]?.trim(),
-      content: row[2]?.trim(),
-    }))
-    .filter(isValidStory);
+  const stories: SheetStory[] = [];
+  for (const row of records) {
+    const title = row[0]?.trim();
+    const genre = row[1]?.trim();
+    const content = row[2]?.trim();
+    if (!title || !genre || !content) continue;
+    const author = row[3]?.trim() || undefined;
+    stories.push({ title, genre, content, ...(author ? { author } : {}) });
+  }
+  return stories;
 }

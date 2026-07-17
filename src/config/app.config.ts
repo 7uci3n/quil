@@ -23,6 +23,7 @@ export type GuildChannels = {
     dtpTracking?: string;
     crewCoins?: string;
     magicItems?: string;
+    charSubmissions?: string; // forum where character name changes are recorded
     // other generic channels can be added here
     }
 
@@ -105,6 +106,7 @@ export const DEFAULT_CONFIG: AppConfig = {
                 dtpTracking: "1336083139272900740",
                 crewCoins: "1457778385710354484",
                 magicItems: "1347077949714731048",
+                charSubmissions: "1408349966686224424",
             },
             features: {
                 wipes: { enabled: false },
@@ -131,3 +133,10 @@ export const DEFAULT_CONFIG: AppConfig = {
         }
     }
 } as const satisfies AppConfig;
+
+// Utility type for the dev override file — every field is optional, deeply.
+type DeepPartial<T> = T extends object
+  ? { [K in keyof T]?: DeepPartial<T[K]> }
+  : T;
+
+export type DevConfig = DeepPartial<AppConfig>;

@@ -6,6 +6,7 @@ export interface SheetStory {
   title: string;
   genre: string;
   content: string;
+  author?: string;
 }
 
 export const data = new SlashCommandBuilder()
@@ -65,30 +66,38 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   const pages = chunkString(story.content, 3500);
   let pageIndex = 0;
+  let locked = false;
+  const ownerId = interaction.user.id;
 
   const buildEmbed = () =>
     new EmbedBuilder()
       .setTitle(story.title)
       .setDescription(pages[pageIndex] ?? null)
       .setFooter({
-        text: `Page ${pageIndex + 1} / ${pages.length} • Genre: ${story.genre}`,
+        text: `Page ${pageIndex + 1} / ${pages.length} • Genre: ${story.genre}${story.author ? ` • By ${story.author}` : ''}`,
       })
       .setColor(0x5865f2);
 
-  const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder()
-      .setCustomId('prev')
-      .setLabel('◀')
-      .setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder()
-      .setCustomId('next')
-      .setLabel('▶')
-      .setStyle(ButtonStyle.Secondary)
-  );
+  const buildRow = () =>
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder()
+        .setCustomId('prev')
+        .setLabel('◀')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('next')
+        .setLabel('▶')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('lock')
+        .setLabel(locked ? '🔓' : '🔒')
+        .setStyle(locked ? ButtonStyle.Danger : ButtonStyle.Secondary)
+        .setDisabled(false)
+    );
 
   const response = await interaction.reply({
     embeds: [buildEmbed()],
-    components: pages.length > 1 ? [row] : [],
+    components: pages.length > 1 ? [buildRow()] : [],
     withResponse: true,
   });
 
@@ -101,8 +110,18 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   });
 
   collector?.on('collect', async i => {
-    if (i.user.id !== interaction.user.id) {
-      await i.reply({ content: 'Not your story!', ephemeral: true });
+    if (i.customId === 'lock') {
+      if (i.user.id !== ownerId) {
+        await i.reply({ content: `Only <@${ownerId}> can lock or unlock this book.`, flags: MessageFlags.Ephemeral });
+        return;
+      }
+      locked = !locked;
+      await i.update({ embeds: [buildEmbed()], components: [buildRow()] });
+      return;
+    }
+
+    if (locked && i.user.id !== ownerId) {
+      await i.reply({ content: `This book is locked by <@${ownerId}>. Only they can turn the pages.`, flags: MessageFlags.Ephemeral });
       return;
     }
 
@@ -112,6 +131,6 @@ export async function execute(interaction: ChatInputCommandInteraction) {
       pageIndex = Math.min(pages.length - 1, pageIndex + 1);
     }
 
-    await i.update({ embeds: [buildEmbed()] });
+    await i.update({ embeds: [buildEmbed()], components: [buildRow()] });
   });
 }

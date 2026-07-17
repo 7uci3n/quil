@@ -1,7 +1,6 @@
 import {
   SlashCommandBuilder,
   ChatInputCommandInteraction,
-  PermissionFlagsBits,
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
@@ -13,6 +12,7 @@ import { getDb } from '../db/index.js';
 
 import { CONFIG } from '../config/resolved.js';
 import { t } from '../lib/i18n.js';
+import { requireRole } from '../config/validaters.js';
 import { getPlayer, loadCharCacheFromDB } from '../utils/db_queries.js';
 
 export const data = new SlashCommandBuilder()
@@ -23,7 +23,6 @@ export const data = new SlashCommandBuilder()
      .setDescription('Target user to retire (Mod+ only).')
      .setRequired(false))
   .addStringOption(o => o.setName('character').setDescription('character to retire').setRequired(false).setAutocomplete(true))
-  .setDefaultMemberPermissions(PermissionFlagsBits.SendMessages)
 
 
 // We’ll register an event listener in execute() for the modal submit.
@@ -32,18 +31,10 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   const char = interaction.options.getString('character');
   const isSelf = !targetUser || targetUser.id === interaction.user.id;
 
-  // Permission check for mod actions
+  // Permission check: retiring another player requires crew role
   if (!isSelf) {
-    const member = await interaction.guild?.members.fetch(interaction.user.id);
-    const canManage =
-      member?.permissions.has(PermissionFlagsBits.KickMembers) ||
-      member?.roles.cache.some(r => Object.values(CONFIG.guild?.config.roles ?? {}).map(role => role.id).includes(r.id));
-    if (!canManage) {
-      return interaction.reply({
-        content: 'Only moderators or staff can retire another adventurer.',
-        flags: MessageFlags.Ephemeral,
-      });
-    }
+    const member = await requireRole(interaction, CONFIG.guild?.config.roles.member.id, 'retire.errors.noPermission');
+    if (!member) return;
   }
 
   // Build modal
