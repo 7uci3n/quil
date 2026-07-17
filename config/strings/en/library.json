@@ -1,0 +1,12 @@
+{
+  "library": {
+    "noStory": [
+      "🖋 No story found for those parameters. The shelf stares back, empty.",
+      "🖋 Nothing matches that request — the archive shrugs."
+    ],
+    "notYours": [
+      "🖋 That's not your story to turn.",
+      "🖋 Hands off — someone else is reading that one."
+    ]
+  }
+}

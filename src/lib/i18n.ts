@@ -46,7 +46,9 @@ function fmt(template: string, params?: Params) {
 
     for (const p of paths) v = (v as Record<string, unknown>)?.[p];
     if (v == null) {
-      getRaw(k);
+      console.warn(
+        `[i18n] missing placeholder "${k}" for template: ${template}`,
+      );
     }
     return v == null ? `{${k}}` : String(v);
   });
@@ -58,20 +60,27 @@ function getRaw(key: string): unknown {
     .split(".")
     .reduce<unknown>(
       (acc: unknown, part) => (acc as Record<string, unknown>)?.[part],
-      dict
+      dict,
     );
 }
 
 export function t(key: string, params?: Params): string {
   const node = getRaw(key);
-  if (node == null) return key; // shows the missing key
+  if (node == null) {
+    console.warn(`[i18n] missing key: ${key}`);
+    return key; // shows the missing key rather than throwing
+  }
 
   if (Array.isArray(node)) {
     const pick = node[Math.floor(Math.random() * node.length)];
     return typeof pick === "string" ? fmt(pick, params) : String(pick);
   }
   if (typeof node === "string") return fmt(node, params);
-  return String(node);
+
+  // A non-string / non-array node means the key points at a subtree, not a
+  // leaf string — surface the key instead of "[object Object]".
+  console.warn(`[i18n] key is not a string: ${key}`);
+  return key;
 }
 
 export function reloadStrings() {

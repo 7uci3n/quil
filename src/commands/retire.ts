@@ -134,7 +134,9 @@ export async function handleModal(interaction: ModalSubmitInteraction) {
     if (guild) {
       const member = await guild.members.fetch(targetId).catch(() => null);
       if (member) {
-        const gmRole = guild.roles.cache.find((r) => r.name === "Guild Member");
+        const gmRoleId = CONFIG.guild?.config.guildMemberRole;
+        const gmRole = gmRoleId ? guild.roles.cache.get(gmRoleId) : undefined;
+        // TODO(QUAL-2): add an "uninitiated" role ID to app.config, resolve by ID.
         const uninit = guild.roles.cache.find((r) => r.name === "uninitiated");
         if (gmRole && member.roles.cache.has(gmRole.id))
           await member.roles.remove(gmRole).catch(() => {});

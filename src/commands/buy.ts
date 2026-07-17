@@ -97,6 +97,15 @@ export async function execute(ix: ChatInputCommandInteraction) {
     return;
   }
 
+  // GP is stored as copper — reject sub-cent precision (mirrors /sell).
+  if (gpInput > 0 && Math.round(gpInput * 100) !== gpInput * 100) {
+    await ix.reply({
+      flags: MessageFlags.Ephemeral,
+      content: t("sell.errors.invalidPrecision"),
+    });
+    return;
+  }
+
   // Update DTP if needed
   if (dtpInput > 0) {
     if ((await updateDTP(user.id)) == null) {

@@ -39,16 +39,14 @@ if (IS_DEV && !CONFIG.system.devAppId) {
   throw new Error("DEV_APP_ID not set in env. Required for dev mode.");
 }
 
+// Flat, non-recursive — must match the runtime loader in core/bot.ts (ADR-0003).
 async function findCommandFiles(dir: string): Promise<string[]> {
-  const out: string[] = [];
   const entries = await fs.readdir(dir, { withFileTypes: true });
-  for (const e of entries) {
-    const p = path.join(dir, e.name);
-    if (e.isDirectory()) out.push(...(await findCommandFiles(p)));
-    else if (e.isFile() && /\.ts$/.test(e.name) && !/\.d\.ts$/.test(e.name))
-      out.push(p);
-  }
-  return out;
+  return entries
+    .filter(
+      (e) => e.isFile() && /\.ts$/.test(e.name) && !/\.d\.ts$/.test(e.name),
+    )
+    .map((e) => path.join(dir, e.name));
 }
 
 async function loadCommandJSONs(): Promise<object[]> {

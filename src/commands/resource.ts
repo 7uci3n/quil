@@ -270,7 +270,7 @@ export async function execute(ix: ChatInputCommandInteraction) {
             amt: amt,
             resource: resourceMapping[resource]?.[0] ?? "",
             newAmt: `${resource === "cp" ? toGp(resNew) : resNew}`,
-            oldAmt: res,
+            oldAmt: `${resource === "cp" ? toGp(res) : res}`,
             icon: resourceMapping[resource]?.[1] ?? "",
             sign: amt >= 0 ? "+" : "",
           }),

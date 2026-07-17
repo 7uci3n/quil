@@ -3,6 +3,7 @@ import {
   SlashCommandBuilder,
   ChatInputCommandInteraction,
   PermissionFlagsBits,
+  MessageFlags,
   userMention,
 } from "discord.js";
 import { getDb } from "../db/index.js";
@@ -39,20 +40,19 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   // name validation (letters/numbers/spaces/apostrophes/hyphens)
   if (!/^[a-zA-Z0-9'\- ]+$/.test(rawName)) {
     await interaction.reply({
-      ephemeral: true,
-      content:
-        "Invalid character name. Use letters, numbers, spaces, apostrophes, or hyphens.",
+      flags: MessageFlags.Ephemeral,
+      content: t("initiate.invalidName"),
     });
     return;
   }
 
   if (await getPlayer(targetUser.id, rawName)) {
     await interaction.reply({
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
       content:
         targetUser.id === interaction.user.id
-          ? "You already have an adventurer of that name. Retire before initiating a new one."
-          : "That user already has an adventurer of that name. Retire before initiating a new one.",
+          ? t("initiate.alreadyExists.self")
+          : t("initiate.alreadyExists.other"),
     });
     return;
   }
@@ -87,7 +87,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         err,
       );
       await interaction.followUp({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         content: `⚠️ Character created, but I couldn't grant the Guild Member role (<@&${GUILD_MEMBER_ROLE_ID}>). Check my role position and permissions.\n\`\`\`${err instanceof Error ? err.message : String(err)}\`\`\``,
       });
     }

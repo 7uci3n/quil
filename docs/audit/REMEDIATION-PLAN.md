@@ -62,14 +62,19 @@ you touch logic.
 
 ## Phase 4 — Correctness polish & size
 
-- [ ] `BUG-7` unify command-loader traversal
-- [ ] `BUG-8` finish i18n fallback + missing-key warnings
-- [ ] `BUG-9`/`BUG-10`/`BUG-11`/`BUG-13` display/precision/representation fixes
-- [ ] `BUG-12` `/init` closes DB
-- [ ] `ARCH-4` split `lfg.ts` (507), then `rewards.ts`/`bot.ts`/`resource.ts`/`buy.ts`
-- [ ] `QUAL-1` introduce a logger; replace `console.*`
-- [ ] `QUAL-2` role resolution by config IDs
-- [ ] `QUAL-3`/`QUAL-4` `flags:` ephemeral + move strings to `t()`
+- [x] `BUG-7` registrar `findCommandFiles` is now flat, matching the runtime loader (ADR-0003).
+- [x] `BUG-8` i18n: removed the dead fallback; `t()` warns + returns the key on missing/non-string keys (no more silent miss / "[object Object]"). Tested.
+- [x] `BUG-9` `/resource` shows the "before" value in GP for `cp` (was raw copper).
+- [x] `BUG-10` `/guildfund` shows GT directly (was `tp / 2`).
+- [x] `BUG-11` `/buy` rejects sub-cent GP precision (mirrors `/sell`).
+- [x] `BUG-12` (`init.db` clean exit) + `BUG-13` (retire `active` representation) — done in Phase 1's retire/init rewrite.
+- [x] `QUAL-2` `/dm` resolves DM/Crew by config role IDs (`hasAnyRole`); `/retire` Guild-Member role via config ID. _(`uninitiated` role has no config ID yet — TODO comment left.)_
+- [x] `QUAL-3` `ephemeral: true` → `flags: MessageFlags.Ephemeral` in initiate/dm/library.
+- [~] `QUAL-4` moved initiate (invalid-name, already-exists) and library (no-story, not-yours) strings to `t()` (+ new `library.json`). _Deferred: the trailing " (updated/retired by …)" suffixes in charedit/retire (cosmetic 🟢)._
+- [ ] `ARCH-4` **DEFERRED** — splitting `lfg.ts` (507) etc. is a large refactor of the most complex commands; doing it safely wants handler-level tests first (Phase 5 `TEST-1/2`). Not worth an untested rewrite right before the first push.
+- [ ] `QUAL-1` **DEFERRED** — logger + ~60 `console.*` replacements: mechanical, low correctness value; scheduled as its own pass.
+- Also deferred: `announceLevelChange` dedup (Phase 3 note — differing signatures).
+- **Exit (partial):** all Phase 4 bugs + permission/ephemeral/i18n polish done; lint + typecheck + 69 tests green; 15 commands import cleanly. `ARCH-4`/`QUAL-1` consciously deferred with rationale.
 
 ## Phase 5 — Tests & docs
 

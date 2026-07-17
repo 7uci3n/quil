@@ -4,10 +4,12 @@ import {
   ButtonStyle,
   ChatInputCommandInteraction,
   EmbedBuilder,
+  MessageFlags,
   SlashCommandBuilder,
 } from "discord.js";
 import { StoryCache } from "../utils/db_queries.js";
 import { chunkString } from "../utils/embeds.js";
+import { t } from "../lib/i18n.js";
 
 export interface SheetStory {
   title: string;
@@ -73,8 +75,8 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   if (!story) {
     await interaction.reply({
-      content: "No story found for the given parameters.",
-      ephemeral: true,
+      content: t("library.noStory"),
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -118,7 +120,10 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
   collector?.on("collect", async (i) => {
     if (i.user.id !== interaction.user.id) {
-      await i.reply({ content: "Not your story!", ephemeral: true });
+      await i.reply({
+        content: t("library.notYours"),
+        flags: MessageFlags.Ephemeral,
+      });
       return;
     }
 

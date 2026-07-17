@@ -1,5 +1,16 @@
 {
-    "initiate": {
+  "initiate": {
+    "invalidName": [
+      "🖋 That name won't do — letters, numbers, spaces, apostrophes, or hyphens only."
+    ],
+    "alreadyExists": {
+      "self": [
+        "🖋 You already have an adventurer by that name. Retire them before initiating a new one."
+      ],
+      "other": [
+        "🖋 That user already has an adventurer by that name. Retire them before initiating a new one."
+      ]
+    },
     "title": [
       "Fresh Ink: {name}",
       "New Ledger Entry: {name}",
@@ -29,7 +40,6 @@
       "🖋 Ah, **{name}** — one of Valkor’s recruits, I presume. The parchment smells faintly of brimstone and good leadership.",
       "🖋 Another adventurer under Valkor’s watchful eye. Try not to make him rewrite the rulebook again.",
       "🖋 Filed under ‘Moderately Supervised by Sauron.’ Don’t worry — he only burns paperwork metaphorically these days."
-      
     ],
     "description": [
       "Quil scratches your name into the guild ledger with a satisfied flourish. Your kit is basic, your pockets jingle (a little), and your fate is now a matter of public record. Adventure awaits; try not to get any dragon on the paperwork.",
