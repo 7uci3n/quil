@@ -1,0 +1,96 @@
+name: Deploy to prod
+
+# Deploys a published GHCR image to the production box via a self-hosted runner
+# (ADR-0006). Two entry points:
+#   - workflow_dispatch: pick a tag from the Actions UI. Roll back by choosing an
+#     older tag (e.g. 1.3.0); retrigger by re-running. This is the manual path.
+#   - release: published: auto-deploys the just-released semver.
+#
+# The runner is OUTBOUND-only (no inbound access opened on the box). It runs
+# compose against a FIXED deploy directory on the box that holds .env + data/ +
+# backups/, so the DB volume and secrets survive every deploy. The GHCR package is
+# public (ADR-0006 / D9), so no registry credential lives on the box.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Image tag to deploy (e.g. 1.4.0, 1.4, a commit sha, or latest)"
+        required: true
+        default: "latest"
+  release:
+    types: [published]
+
+# Never run two deploys at once; do not cancel an in-flight deploy.
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # Registered on the box with these labels (ADR-0006).
+    runs-on: [self-hosted, quil-prod]
+    # Safety: only maintainer-initiated events reach this workflow, but be explicit
+    # so a future trigger addition can't let an untrusted fork PR deploy.
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'release'
+    env:
+      QUIL_IMAGE: ghcr.io/remnantwestmarches/quil
+      # Fixed deploy dir on the box (holds .env, data/, backups/). Override with a
+      # repo variable if the operator put it elsewhere.
+      DEPLOY_DIR: ${{ vars.QUIL_DEPLOY_DIR || '/opt/quil' }}
+    steps:
+      - name: Checkout (for the current docker-compose.yml)
+        uses: actions/checkout@v4
+
+      - name: Resolve tag to deploy
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            # release tag v1.4.0 -> image tag 1.4.0
+            echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Sync compose file into deploy dir
+        run: |
+          test -d "$DEPLOY_DIR" || { echo "::error::$DEPLOY_DIR missing — run one-time box setup (RUNBOOK)"; exit 1; }
+          test -f "$DEPLOY_DIR/.env" || { echo "::error::$DEPLOY_DIR/.env missing — deploy needs the bot token"; exit 1; }
+          cp docker-compose.yml "$DEPLOY_DIR/docker-compose.yml"
+
+      - name: Pull & start
+        working-directory: ${{ env.DEPLOY_DIR }}
+        env:
+          QUIL_TAG: ${{ steps.tag.outputs.value }}
+        run: |
+          echo "Deploying $QUIL_IMAGE:$QUIL_TAG"
+          docker compose pull
+          docker compose up -d
+
+      - name: Health check
+        working-directory: ${{ env.DEPLOY_DIR }}
+        run: |
+          # Give the entrypoint time to init/migrate and reach Ready.
+          for i in $(seq 1 30); do
+            state="$(docker compose ps --format '{{.State}}' quil 2>/dev/null || true)"
+            if [ "$state" = "running" ]; then
+              echo "Container running."
+              docker compose logs --tail=20 quil || true
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::quil did not reach 'running' within ~60s"
+          docker compose ps
+          docker compose logs --tail=50 quil || true
+          exit 1
+
+      - name: Sync slash commands
+        working-directory: ${{ env.DEPLOY_DIR }}
+        env:
+          QUIL_TAG: ${{ steps.tag.outputs.value }}
+        run: |
+          # Re-register slash commands from the deployed image (idempotent —
+          # Discord dedupes). The 'register' one-shot service uses the same image
+          # + .env; --rm cleans it up. Runs even though it's in the 'tools' profile.
+          docker compose run --rm register

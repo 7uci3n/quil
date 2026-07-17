@@ -85,6 +85,63 @@ Expected output:
    > On the Docker deployment the service is `quil` (see docs/MIGRATION-docker.md):
    > `docker compose restart quil`
 
+### Continuous deployment (self-hosted runner) — preferred once containerized
+
+Once the box runs Docker (see below), deploys happen from the **GitHub Actions UI**,
+not the shell — no SSH, no build on the box. Design rationale: **ADR-0006**.
+
+**Deploy / roll back (day-to-day):**
+
+1. Cut a release tag (`vX.Y.Z`) — `release.yml` builds & pushes the image to GHCR
+   and auto-runs the deploy. To deploy or **roll back** manually: repo → **Actions →
+   _Deploy to prod_ → Run workflow**, and enter the image tag (`latest`, a semver
+   like `1.3.0`, or a `sha-<short>` tag). Older tags roll back with no rebuild.
+2. The workflow pulls the tag, `docker compose up -d` (the entrypoint runs
+   init+migrate), health-checks the `quil` container, then re-registers slash
+   commands. Re-running is safe (idempotent).
+
+**One-time box setup (Kali, amd64):**
+
+```bash
+# 1. Docker CE engine (docker-cli alone is client-only and will NOT run containers)
+curl -fsSL https://get.docker.com | sh
+
+# 2. Dedicated unprivileged runner user with docker access
+sudo useradd -m -s /bin/bash quil-runner
+sudo usermod -aG docker quil-runner          # docker group ≈ root; fine on a dedicated box
+
+# 3. Fixed deploy dir holding .env + persistent data (migrate per docs/MIGRATION-docker.md)
+sudo install -d -o quil-runner /opt/quil      # or set repo var QUIL_DEPLOY_DIR
+#    place .env (with DISCORD_TOKEN etc.) and the migrated data/ under /opt/quil
+
+# 4. Register the GitHub Actions runner (get URL + short-lived token from
+#    repo → Settings → Actions → Runners → "New self-hosted runner", Linux x64)
+sudo -iu quil-runner
+mkdir actions-runner && cd actions-runner
+curl -o r.tar.gz -L <URL_FROM_UI> && tar xzf r.tar.gz
+./config.sh --url https://github.com/remnantwestmarches/quil \
+            --token <SHORT_LIVED_TOKEN> --labels quil-prod --name kali-prod --unattended
+exit
+
+# 5. Install + start as a service so it survives reboot
+cd /home/quil-runner/actions-runner
+sudo ./svc.sh install quil-runner
+sudo ./svc.sh start
+```
+
+The runner is **outbound-only** (long-polls GitHub) — no inbound ports. The
+registration token is single-use (config only); afterwards the runner holds its own
+credential. Coming from GitLab: there is **no docker executor** — steps run as shell
+on the host, which is why the runner user needs the `docker` group.
+
+> **Public-repo caveat:** if `remnantwestmarches/quil` is public, keep Actions →
+> _Fork pull request workflows_ requiring approval and never add a `pull_request`
+> trigger to a workflow that could run on this runner. `deploy.yml` only triggers on
+> `workflow_dispatch`/`release`.
+
+**Prerequisite:** the GHCR package must be **public** (or the box needs a read-only
+pull token), so the runner can pull without stored credentials.
+
 ---
 
 ## 🔑 Secrets
