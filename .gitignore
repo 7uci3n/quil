@@ -40,3 +40,5 @@ data/**/*.sqlite3
 data/**/*.db*
 backups/**
 !backups/.gitkeep
+# Mnemos tool state (session-local)
+.mnemos/
